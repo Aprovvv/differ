@@ -90,9 +90,9 @@ void tree_print(FILE* fp, tree_node_t* node, int(*print_func)(FILE* fp, const vo
     if (node == NULL)
         return;
     fprintf(fp, "(");
-    print_func(fp, NODE_VAL_P(node), node->type);
     if (node->left)
         tree_print(fp, node->left, print_func);
+    print_func(fp, NODE_VAL_P(node), node->type);
     if (node->right)
         tree_print(fp, node->right, print_func);
     fprintf(fp, ")");

@@ -58,8 +58,7 @@ int main()
 
 int pr (FILE* fp, const void* ptr, int type)
 {
-    //const char* p = (const char*) ptr;
-    //fprintf(stderr, "%d", *inp);
+    //fprintf(stderr, "in pr type = %d\n", type);
     switch (type)
     {
     case NUM:
@@ -68,8 +67,14 @@ int pr (FILE* fp, const void* ptr, int type)
         return fprintf(fp, "%c", *((const char*)ptr));
     case OP:
         for (size_t i = 0; i < sizeof(OPS)/sizeof(OPS[0]); i++)
+        {
+            //fprintf(stderr, "OPS[i].arg_code = %d; *((const long*)ptr) = %d\n", OPS[i].arg_code, *((const long*)ptr));
             if (OPS[i].arg_code == *((const int*)ptr))
+            {
+                //fprintf(stderr, "in pr i = %d\n", i);
                 return fprintf(fp, "%s", OPS[i].str);
+            }
+        }
         assert(0);
         break;
     default:
@@ -123,7 +128,7 @@ tree_node_t* tree_from_file (FILE* input)
             if (strcmp(VARS[i].str, arg) == 0)
             {
                 int code = VARS[i].arg_code;
-                node = new_node(&code, sizeof(code), code);
+                node = new_node(&code, sizeof(code), VAR);
                 node_add_left(node, node_temp_ptr);
                 break;
             }
@@ -136,13 +141,16 @@ tree_node_t* tree_from_file (FILE* input)
         {
             if (strcmp(OPS[i].str, arg) == 0)
             {
+                fprintf(stderr, "i = %d\n", i);
                 int code = OPS[i].arg_code;
-                node = new_node(&code, sizeof(code), code);
+                node = new_node(&code, sizeof(code), OP);
                 node_add_left(node, node_temp_ptr);
                 break;
             }
         }
     }
+
+    fprintf(stderr, "type = %d\n", node_get_type(node));
 
     if (node == NULL)
         return NULL;
