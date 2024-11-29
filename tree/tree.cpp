@@ -17,8 +17,6 @@ struct tree_node_t
 static void add_dot_node(FILE* fp, tree_node_t* node,
                          int(*print_func)(FILE* fp, const void* ptr, int type),
                          size_t code);
-static void dbug_delete(tree_node_t* node, tree_node_t* root);
-
 int pr (FILE* fp, const void* ptr, int type);
 
 tree_node_t* new_node(void* val_ptr, size_t val_size, long type, tree_node_t* left, tree_node_t* right)
@@ -83,21 +81,18 @@ tree_node_t* node_add_right(tree_node_t* node, tree_node_t* next_node)
 
 tree_node_t* node_copy(tree_node_t* node)
 {
-    return new_node(NODE_VAL_P(node), node->val_size, node->type, node->left, node->right);
+    tree_node_t* new_left = node->left == NULL ? NULL : node_copy(node->left);
+    tree_node_t* new_right = node->right == NULL ? NULL : node_copy(node->right);
+    return new_node(NODE_VAL_P(node), node->val_size, node->type, new_left, new_right);
 }
 
 void branch_delete(tree_node_t* node)
 {
-    dbug_delete(node, node);
-}
-
-static void dbug_delete(tree_node_t* node, tree_node_t* root)
-{
     if (node->left)
-        dbug_delete(node->left, root);
+        branch_delete(node->left);
     if (node->right)
-        dbug_delete(node->right, root);
-    tree_graph_dump(node, pr);
+        branch_delete(node->right);
+    //tree_graph_dump(node, pr);
     free(node);
 }
 
@@ -112,6 +107,20 @@ void tree_print(FILE* fp, tree_node_t* node, int(*print_func)(FILE* fp, const vo
     if (node->right)
         tree_print(fp, node->right, print_func);
     fprintf(fp, ")");
+}
+
+static void add_arrows(FILE* fp, tree_node_t* node, int code)
+{
+    if (node->left)
+    {
+        fprintf(fp, "n%zu<left> -> n%zu;\n", code, code*2 + 0);
+        add_arrows(fp, node->left, code*2 + 0);
+    }
+    if (node->right)
+    {
+        fprintf(fp, "n%zu<right> -> n%zu\n", code, code*2 + 1);
+        add_arrows(fp, node->right, code*2 + 1);
+    }
 }
 
 void tree_graph_dump(tree_node_t* node, int(*print_func)(FILE* fp, const void*, int type))
@@ -132,9 +141,10 @@ void tree_graph_dump(tree_node_t* node, int(*print_func)(FILE* fp, const void*, 
         return;
 
     fprintf(fp, "digraph G{\n"
-                "\tnode[shape=ellipse]\n"
+                "\tnode[shape=none; margin=0]\n"
                 "\t{\n");
     add_dot_node(fp, node, print_func, 1);
+    //add_arrows(fp, node, 1);
 
     fprintf(fp, "\t}\n}");
     fclose(fp);
@@ -147,17 +157,26 @@ static void add_dot_node(FILE* fp, tree_node_t* node,
                          int(*print_func)(FILE* fp, const void*, int type),
                          size_t code)
 {
-    fprintf(fp, "%zu [label = \"", code);
+    //fprintf(fp, "%zu [label = \"", code);
+    fprintf(fp, "n%zu [label = <\n"
+                    "\t<TABLE BORDER=\"0\" CELLBORDER=\"1\" "
+                    "CELLSPACING=\"0\" CELLPADDING=\"4\">\n"
+                    "\t<TR><TD PORT=\"addr\">addr %p</TD></TR>\n"
+                    "\t<TR><TD PORT=\"left\">left %p</TD></TR>\n"
+                    "\t<TR><TD PORT=\"right\">right %p</TD></TR>\n"
+                    "\t<TR><TD PORT=\"val\">val ",
+                    code, node, node->left, node->right);
     print_func(fp, NODE_VAL_P(node), node->type);
-    fprintf(fp, "\"];\n");
+    fprintf(fp, "</TD></TR>\n</TABLE>>");
+    fprintf(fp, "];\n");
     if (node->left)
     {
-        fprintf(fp, "%zu -> %zu;\n", code, code*2 + 0);
+        fprintf(fp, "n%zu -> n%zu;\n", code, code*2 + 0);
         add_dot_node(fp, node->left, print_func, code*2 + 0);
     }
     if (node->right)
     {
-        fprintf(fp, "%zu -> %zu\n", code, code*2 + 1);
+        fprintf(fp, "n%zu -> n%zu;\n", code, code*2 + 1);
         add_dot_node(fp, node->right, print_func, code*2 + 1);
     }
 }

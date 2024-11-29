@@ -79,7 +79,6 @@ int main()
     tree_print(stderr, droot, pr);
     tree_graph_dump(droot, pr);
     putchar('\n');
-
     branch_delete(root);
     branch_delete(droot);
     fclose(input);
@@ -243,41 +242,51 @@ tree_node_t* diff (tree_node_t* f)
         }
         case DIV:
         {
-            int sub = SUB, pw = POW, div = DIV, mult = MULT;
-            tree_node_t* numer =
-                new_node(&sub, sizeof(sub), OP,
-                         new_node(&mult, sizeof(mult), OP,
-                                  diff(node_to_left(f)), node_copy(node_to_right(f))),
-                         new_node(&mult, sizeof(mult), OP,
-                                  node_copy(node_to_left(f)), diff(node_to_right(f))));
-            double two = 2;
-            tree_node_t* denumer =
-                new_node(&pw, sizeof(pw), OP,
-                         node_copy(node_to_right(f)),
-                         new_node(&two, sizeof(two), NUM, NULL, NULL));
-            return new_node(&div, sizeof(div), OP,
-                            numer, denumer);
+
         }
         case POW:
         {
-            //g(x)/f(x)*f'(x)+ln(f(x))*g'(x)
-            //((((g(x)/f(x))*f'(x))+(ln(f(x))*g'(x)))*(f(x)^(g(x)))
-            if (node_get_type(node_to_left(f)) == VAR &&
-                node_get_type(node_to_right(f)) == NUM)
-            {
-                int mult = MULT, pw = POW, var = 0;
-                node_get_val(node_to_left(f), &var);
-                double new_pow = 0, old_pow;
-                node_get_val(node_to_right(f), &old_pow);
-                new_pow = old_pow - 1;
-                return new_node(&mult, sizeof(mult), OP,
-                                new_node(&old_pow, sizeof(old_pow), NUM, NULL, NULL),
-                                new_node(&pw, sizeof(pw), OP,
-                                         new_node(&var, sizeof(var), VAR, NULL, NULL),
-                                         new_node(&new_pow, sizeof(new_pow), NUM, NULL, NULL)));
-            }
-            assert(0);
-            break;
+            //f'(x)*g'(x)*f(x)^(g(x)-1)
+            //(f'(x)*g'(x))*(f(x)^(g(x)-1))
+            int op = MULT;
+            tree_node_t* df_dg =
+                new_node(&op, sizeof(op), OP,
+                         diff(node_to_left(f)), diff(node_to_right(f)));
+
+            int one = 1;
+            tree_node_t* node_one =
+                new_node(&one, sizeof(one), NUM, NULL, NULL);
+
+            op = SUB;
+            tree_node_t* g_minus_1 =
+                new_node(&op, sizeof(op), OP,
+                         node_copy(node_to_right(f)), node_one);
+
+            op = POW;
+            tree_node_t* pow_func =
+                new_node(&op, sizeof(op), OP,
+                         node_copy(f), g_minus_1);
+
+            op = MULT;
+            return new_node(&op, sizeof(op), OP,
+                            df_dg, pow_func);
+            /*int op = MULT;
+            df = new_node(&op, sizeof(op), OP);
+            tree_node_t* der_mult = new_node(&op, sizeof(op), OP);
+            op = POW;
+            tree_node_t* power_func = new_node(&op, sizeof(op), OP);
+
+            node_add_left(der_mult, diff(node_to_left(f)));
+            node_add_right(der_mult, diff(node_to_right(f)));
+
+            op = SUB;
+            tree_node_t* power = new_node(&op, sizoef(op),
+
+            node_add_left(power_func, node_copy(f));
+            node_add_right(power_func, node_copy(
+
+            node_add_left(df, der_mult);
+            node_add_right(df, power_func);*/
         }
         default:
             assert(0);
