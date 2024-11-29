@@ -29,7 +29,16 @@ enum OP_CODES {
     ADD = 1,
     SUB,
     MULT,
-    DIV
+    DIV,
+    POW
+};
+
+enum FUNC_CODES {
+    SIN,
+    COS,
+    TG,
+    CTG,
+    LN
 };
 
 const struct ARG VARS[] = {
@@ -41,6 +50,15 @@ const struct ARG OPS[] = {
     {"-", SUB},
     {"*", MULT},
     {"/", DIV},
+    {"^", POW}
+};
+
+const struct ARG FUNCS[] = {
+    {"sin", SIN},
+    {"cos", COS},
+    {"tg", TG},
+    {"ctg", CTG},
+    {"ln", LN},
 };
 
 int main()
@@ -52,6 +70,7 @@ int main()
     fprintf(stderr, "tree:\n");
     tree_print(stderr, root, pr);
     tree_graph_dump(root, pr);
+    putchar('\n');
     branch_delete(root);
     fclose(input);
 }
@@ -77,41 +96,43 @@ int pr (FILE* fp, const void* ptr, int type)
         }
         assert(0);
         break;
+    case FUNC:
+        for (size_t i = 0; i < sizeof(FUNCS)/sizeof(FUNCS[0]); i++)
+        {
+            //fprintf(stderr, "OPS[i].arg_code = %d; *((const long*)ptr) = %d\n", OPS[i].arg_code, *((const long*)ptr));
+            if (FUNCS[i].arg_code == *((const int*)ptr))
+            {
+                //fprintf(stderr, "in pr i = %d\n", i);
+                return fprintf(fp, "%s", FUNCS[i].str);
+            }
+        }
+        assert(0);
+        break;
     default:
         assert(0);
     }
     return 0;
 }
 
-tree_node_t* tree_from_file (FILE* input)
+tree_node_t* tree_from_file (FILE* fp)
 {
-    char ch = getc_until(input, "(");
-    if (ch == EOF || ch == 0)
-        return NULL;
-
+    char ch = getc(fp);
+    fprintf(stderr, "start ch = %c\n", ch);
     tree_node_t* node_temp_ptr = NULL;
     tree_node_t* node = NULL;
-    ch = next_nonspace(input);
     if (ch == '(')
     {
-        ungetc('(', input);
-        if ((node_temp_ptr = tree_from_file(input)) == NULL)
-            return NULL;
-        //ch = next_nonspace(input);
-        //ch = getc(input);
+        node_temp_ptr = tree_from_file(fp);
+        ch = getc(fp);
     }
     char arg[ARG_LEN] = "";
-    size_t i = 0;
-    fprintf(stderr, "(100) ch = %c\n", ch);
-    if (ch != '(')
+    int i = 0;
+    while (ch != '(' && ch != ')' && i < ARG_LEN && ch != EOF)
     {
-        arg[0] = ch;
-        i = 1;
-    }
-    while ((ch = (char)getc(input)) != ')' && ch != '(' && i < ARG_LEN)
         arg[i++] = ch;
-
-    fprintf(stderr, "arg = %s\n", arg);
+        ch = getc(fp);
+    }
+    arg[i] = 0;
 
     if (is_num(arg))
     {
@@ -141,7 +162,7 @@ tree_node_t* tree_from_file (FILE* input)
         {
             if (strcmp(OPS[i].str, arg) == 0)
             {
-                fprintf(stderr, "i = %d\n", i);
+                //fprintf(stderr, "i = %d\n", i);
                 int code = OPS[i].arg_code;
                 node = new_node(&code, sizeof(code), OP);
                 node_add_left(node, node_temp_ptr);
@@ -149,27 +170,28 @@ tree_node_t* tree_from_file (FILE* input)
             }
         }
     }
-
-    fprintf(stderr, "type = %d\n", node_get_type(node));
-
     if (node == NULL)
-        return NULL;
-    //ch = next_nonspace(input);
-    /*if (ch == EOF || ch == 0)
-        return NULL;*/
-    fprintf(stderr, "ch = %c %d\n", ch, ch);
-
+    {
+        for (i = 0; i < sizeof(FUNCS)/sizeof(FUNCS[0]); i++)
+        {
+            if (strcmp(FUNCS[i].str, arg) == 0)
+            {
+                //fprintf(stderr, "i = %d\n", i);
+                int code = FUNCS[i].arg_code;
+                node = new_node(&code, sizeof(code), FUNC);
+                node_add_left(node, node_temp_ptr);
+                break;
+            }
+        }
+    }
     if (ch == '(')
     {
-        ungetc('(', input);
-        if ((node_temp_ptr = tree_from_file(input)) == NULL)
-            return NULL;
+        //ungetc('(', fp);
+        node_temp_ptr = tree_from_file(fp);
         node_add_right(node, node_temp_ptr);
+        getc(fp);
     }
-    else
-    {
-        //ungetc(ch, input);
-    }
+    fprintf(stderr, "arg = %s; ch = %c\n", arg, ch);
     return node;
 }
 
