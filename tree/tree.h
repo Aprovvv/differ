@@ -3,11 +3,12 @@
 
 struct tree_node_t;
 
-tree_node_t* new_node(void* val_ptr, size_t val_size, long type);
+tree_node_t* new_node(void* val_ptr, size_t val_size, long type, tree_node_t* left, tree_node_t* right);
 tree_node_t* node_add_left(tree_node_t* node, tree_node_t* next_node);
 tree_node_t* node_add_right(tree_node_t* node, tree_node_t* next_node);
 tree_node_t* node_to_left(tree_node_t* node);
 tree_node_t* node_to_right(tree_node_t* node);
+tree_node_t* node_copy(tree_node_t* node);
 
 void node_get_val(tree_node_t* node, void* dest);
 void branch_delete(tree_node_t* node);

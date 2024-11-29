@@ -10,6 +10,7 @@ char next_nonspace (FILE* fp);
 char getc_until (FILE* fp, const char* str);
 tree_node_t* tree_from_file (FILE* input);
 int pr (FILE* fp, const void* ptr, int type);
+tree_node_t* diff (tree_node_t* f);
 
 struct ARG {
     const char* str;
@@ -38,7 +39,8 @@ enum FUNC_CODES {
     COS,
     TG,
     CTG,
-    LN
+    LN,
+    EXP
 };
 
 const struct ARG VARS[] = {
@@ -59,6 +61,7 @@ const struct ARG FUNCS[] = {
     {"tg", TG},
     {"ctg", CTG},
     {"ln", LN},
+    {"exp", EXP}
 };
 
 int main()
@@ -71,7 +74,14 @@ int main()
     tree_print(stderr, root, pr);
     tree_graph_dump(root, pr);
     putchar('\n');
+
+    tree_node_t* droot = diff(root);
+    tree_print(stderr, droot, pr);
+    tree_graph_dump(droot, pr);
+    putchar('\n');
+
     branch_delete(root);
+    branch_delete(droot);
     fclose(input);
 }
 
@@ -83,7 +93,7 @@ int pr (FILE* fp, const void* ptr, int type)
     case NUM:
         return fprintf(fp, "%f", (*(double*)ptr));
     case VAR:
-        return fprintf(fp, "%c", *((const char*)ptr));
+        return fprintf(fp, "%c", *((const int*)ptr));
     case OP:
         for (size_t i = 0; i < sizeof(OPS)/sizeof(OPS[0]); i++)
         {
@@ -126,7 +136,7 @@ tree_node_t* tree_from_file (FILE* fp)
         ch = getc(fp);
     }
     char arg[ARG_LEN] = "";
-    int i = 0;
+    size_t i = 0;
     while (ch != '(' && ch != ')' && i < ARG_LEN && ch != EOF)
     {
         arg[i++] = ch;
@@ -138,7 +148,7 @@ tree_node_t* tree_from_file (FILE* fp)
     {
         double num = 0;
         sscanf(arg, "%lf", &num);
-        node = new_node(&num, sizeof(num), NUM);
+        node = new_node(&num, sizeof(num), NUM, NULL, NULL);
         node_add_left(node, node_temp_ptr);
     }
 
@@ -149,8 +159,7 @@ tree_node_t* tree_from_file (FILE* fp)
             if (strcmp(VARS[i].str, arg) == 0)
             {
                 int code = VARS[i].arg_code;
-                node = new_node(&code, sizeof(code), VAR);
-                node_add_left(node, node_temp_ptr);
+                node = new_node(&code, sizeof(code), VAR, node_temp_ptr, NULL);
                 break;
             }
         }
@@ -164,8 +173,7 @@ tree_node_t* tree_from_file (FILE* fp)
             {
                 //fprintf(stderr, "i = %d\n", i);
                 int code = OPS[i].arg_code;
-                node = new_node(&code, sizeof(code), OP);
-                node_add_left(node, node_temp_ptr);
+                node = new_node(&code, sizeof(code), OP, node_temp_ptr, NULL);
                 break;
             }
         }
@@ -178,8 +186,7 @@ tree_node_t* tree_from_file (FILE* fp)
             {
                 //fprintf(stderr, "i = %d\n", i);
                 int code = FUNCS[i].arg_code;
-                node = new_node(&code, sizeof(code), FUNC);
-                node_add_left(node, node_temp_ptr);
+                node = new_node(&code, sizeof(code), FUNC, node_temp_ptr, NULL);
                 break;
             }
         }
@@ -193,6 +200,90 @@ tree_node_t* tree_from_file (FILE* fp)
     }
     fprintf(stderr, "arg = %s; ch = %c\n", arg, ch);
     return node;
+}
+
+tree_node_t* diff (tree_node_t* f)
+{
+    tree_node_t* df = NULL;
+    if (node_get_type(f) == NUM)
+    {
+        double val = 0;
+        df = new_node(&val, sizeof(val), NUM, NULL, NULL);
+        return df;
+    }
+    if (node_get_type(f) == VAR)
+    {
+        double val = 1;
+        df = new_node(&val, sizeof(val), NUM, NULL, NULL);
+        return df;
+    }
+    if (node_get_type(f) == OP)
+    {
+        int val = 0;
+        node_get_val(f, &val);
+        //fprintf(stderr, "val = %c = %d\n", val, val);
+        switch(val)
+        {
+        case ADD:
+        case SUB:
+            return new_node(&val, sizeof(val), OP,
+                            diff(node_to_left(f)), diff(node_to_right(f)));
+        case MULT:
+        {
+            int op = MULT;
+            tree_node_t* left_mult =
+                new_node(&op, sizeof(op), OP,
+                         diff(node_to_left(f)), node_copy(node_to_right(f)));
+            tree_node_t* right_mult =
+                new_node(&op, sizeof(op), OP,
+                         node_copy(node_to_left(f)), diff(node_to_right(f)));
+            op = ADD;
+            return new_node(&op, sizeof(op), OP,
+                        left_mult, right_mult);
+        }
+        case DIV:
+        {
+            int sub = SUB, pw = POW, div = DIV, mult = MULT;
+            tree_node_t* numer =
+                new_node(&sub, sizeof(sub), OP,
+                         new_node(&mult, sizeof(mult), OP,
+                                  diff(node_to_left(f)), node_copy(node_to_right(f))),
+                         new_node(&mult, sizeof(mult), OP,
+                                  node_copy(node_to_left(f)), diff(node_to_right(f))));
+            double two = 2;
+            tree_node_t* denumer =
+                new_node(&pw, sizeof(pw), OP,
+                         node_copy(node_to_right(f)),
+                         new_node(&two, sizeof(two), NUM, NULL, NULL));
+            return new_node(&div, sizeof(div), OP,
+                            numer, denumer);
+        }
+        case POW:
+        {
+            //g(x)/f(x)*f'(x)+ln(f(x))*g'(x)
+            //((((g(x)/f(x))*f'(x))+(ln(f(x))*g'(x)))*(f(x)^(g(x)))
+            if (node_get_type(node_to_left(f)) == VAR &&
+                node_get_type(node_to_right(f)) == NUM)
+            {
+                int mult = MULT, pw = POW, var = 0;
+                node_get_val(node_to_left(f), &var);
+                double new_pow = 0, old_pow;
+                node_get_val(node_to_right(f), &old_pow);
+                new_pow = old_pow - 1;
+                return new_node(&mult, sizeof(mult), OP,
+                                new_node(&old_pow, sizeof(old_pow), NUM, NULL, NULL),
+                                new_node(&pw, sizeof(pw), OP,
+                                         new_node(&var, sizeof(var), VAR, NULL, NULL),
+                                         new_node(&new_pow, sizeof(new_pow), NUM, NULL, NULL)));
+            }
+            assert(0);
+            break;
+        }
+        default:
+            assert(0);
+        }
+    }
+    return NULL;
 }
 
 int is_num (const char* str)

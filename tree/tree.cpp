@@ -17,14 +17,19 @@ struct tree_node_t
 static void add_dot_node(FILE* fp, tree_node_t* node,
                          int(*print_func)(FILE* fp, const void* ptr, int type),
                          size_t code);
+static void dbug_delete(tree_node_t* node, tree_node_t* root);
 
-tree_node_t* new_node(void* val_ptr, size_t val_size, long type)
+int pr (FILE* fp, const void* ptr, int type);
+
+tree_node_t* new_node(void* val_ptr, size_t val_size, long type, tree_node_t* left, tree_node_t* right)
 {
     size_t node_size = sizeof(long) + 2*sizeof(tree_node_t*) + sizeof(size_t) + val_size;
     tree_node_t* p = (tree_node_t*)calloc(node_size, 1);
     if (p)
     {
         memcpy(NODE_VAL_P(p), val_ptr, val_size);
+        p->left = left;
+        p->right = right;
         p->val_size = val_size;
         p->type = type;
     }
@@ -76,12 +81,23 @@ tree_node_t* node_add_right(tree_node_t* node, tree_node_t* next_node)
     return node->right = next_node;
 }
 
+tree_node_t* node_copy(tree_node_t* node)
+{
+    return new_node(NODE_VAL_P(node), node->val_size, node->type, node->left, node->right);
+}
+
 void branch_delete(tree_node_t* node)
 {
+    dbug_delete(node, node);
+}
+
+static void dbug_delete(tree_node_t* node, tree_node_t* root)
+{
     if (node->left)
-        branch_delete(node->left);
+        dbug_delete(node->left, root);
     if (node->right)
-        branch_delete(node->right);
+        dbug_delete(node->right, root);
+    tree_graph_dump(node, pr);
     free(node);
 }
 
