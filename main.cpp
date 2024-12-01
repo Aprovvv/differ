@@ -147,6 +147,7 @@ tree_node_t* tree_from_file (FILE* fp)
     {
         double num = 0;
         sscanf(arg, "%lf", &num);
+        //fprintf(stderr, "num = %f\n", num);
         node = new_node(&num, sizeof(num), NUM, NULL, NULL);
         node_add_left(node, node_temp_ptr);
     }
@@ -242,51 +243,39 @@ tree_node_t* diff (tree_node_t* f)
         }
         case DIV:
         {
-
+            int mult = MULT, sub = SUB, div = DIV, pw = POW;
+            double two = 2;
+            tree_node_t* numer =
+                new_node(&sub, sizeof(sub), OP,
+                         new_node(&mult, sizeof(mult), OP,
+                                  diff(node_to_left(f)), node_copy(node_to_right(f))),
+                         new_node(&mult, sizeof(mult), OP,
+                                  node_copy(node_to_left(f)), diff(node_to_right(f))));
+            tree_node_t* denumer =
+                new_node(&pw, sizeof(pw), OP,
+                         node_copy(node_to_right(f)),
+                         new_node(&two, sizeof(two), NUM,
+                                  NULL, NULL));
+            return new_node(&div, sizeof(div), OP, numer, denumer);
         }
         case POW:
         {
-            //f'(x)*g'(x)*f(x)^(g(x)-1)
-            //(f'(x)*g'(x))*(f(x)^(g(x)-1))
-            int op = MULT;
-            tree_node_t* df_dg =
-                new_node(&op, sizeof(op), OP,
-                         diff(node_to_left(f)), diff(node_to_right(f)));
+            if (node_get_type(node_to_left(f)) == VAR &&
+                node_get_type(node_to_right(f)) == NUM)
+            {
+                int mult = MULT, pw = POW;
+                double old_pow = 0;
+                node_get_val(node_to_right(f), &old_pow);
+                double new_pow = old_pow - 1;
+                tree_node_t* base =
+                    new_node(&mult, sizeof(mult), OP,
+                             new_node(&old_pow, sizeof(old_pow), NUM, NULL, NULL),
+                             node_copy(node_to_left(f)));
+                return new_node(&pw, sizeof(pw), OP,
+                                base,
+                                new_node(&new_pow, sizeof(new_pow), NUM, NULL, NULL));
 
-            int one = 1;
-            tree_node_t* node_one =
-                new_node(&one, sizeof(one), NUM, NULL, NULL);
-
-            op = SUB;
-            tree_node_t* g_minus_1 =
-                new_node(&op, sizeof(op), OP,
-                         node_copy(node_to_right(f)), node_one);
-
-            op = POW;
-            tree_node_t* pow_func =
-                new_node(&op, sizeof(op), OP,
-                         node_copy(f), g_minus_1);
-
-            op = MULT;
-            return new_node(&op, sizeof(op), OP,
-                            df_dg, pow_func);
-            /*int op = MULT;
-            df = new_node(&op, sizeof(op), OP);
-            tree_node_t* der_mult = new_node(&op, sizeof(op), OP);
-            op = POW;
-            tree_node_t* power_func = new_node(&op, sizeof(op), OP);
-
-            node_add_left(der_mult, diff(node_to_left(f)));
-            node_add_right(der_mult, diff(node_to_right(f)));
-
-            op = SUB;
-            tree_node_t* power = new_node(&op, sizoef(op),
-
-            node_add_left(power_func, node_copy(f));
-            node_add_right(power_func, node_copy(
-
-            node_add_left(df, der_mult);
-            node_add_right(df, power_func);*/
+            }
         }
         default:
             assert(0);
@@ -299,8 +288,11 @@ int is_num (const char* str)
 {
     int i = 0;
     while(str[i] != 0)
-        if (!isdigit(str[i++]))
+    {
+        if (!isdigit(str[i]) && str[i] != '.')
             return 0;
+        i++;
+    }
     return 1;
 }
 
