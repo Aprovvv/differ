@@ -3,14 +3,27 @@
 #include <string.h>
 #include <assert.h>
 #include <ctype.h>
+#include <math.h>
 #include "tree/tree.h"
 
+#define LEFT_IS_NUM(x) (node_to_left(x) && node_get_type(node_to_left(x)) == NUM)
+#define RIGHT_IS_NUM(x) (node_to_right(x) && node_get_type(node_to_right(x)) == NUM)
+#define LEFT_IS_VAR(x) (node_to_left(x) && node_get_type(node_to_left(x)) == VAR)
+#define RIGHT_IS_VAR(x) (node_to_right(x) && node_get_type(node_to_right(x)) == VAR)
+#define LEFT_IS_OP(x) (node_to_left(x) && node_get_type(node_to_left(x)) == OP)
+#define RIGHT_IS_OP(x) (node_to_right(x) && node_get_type(node_to_right(x)) == OP)
+
 int is_num (const char* str);
+int is_int(double x);
 char next_nonspace (FILE* fp);
 char getc_until (FILE* fp, const char* str);
 tree_node_t* tree_from_file (FILE* input);
 int pr (FILE* fp, const void* ptr, int type);
 tree_node_t* diff (tree_node_t* f);
+tree_node_t* calc_node (tree_node_t* node);
+int simplify (tree_node_t* node);
+
+const double EPS = 10e-5;
 
 struct ARG {
     const char* str;
@@ -79,6 +92,17 @@ int main()
     tree_print(stderr, droot, pr);
     tree_graph_dump(droot, pr);
     putchar('\n');
+
+    simplify(root);
+    tree_print(stderr, root, pr);
+    tree_graph_dump(root, pr);
+    putchar('\n');
+
+    simplify(droot);
+    tree_print(stderr, droot, pr);
+    tree_graph_dump(droot, pr);
+    putchar('\n');
+
     branch_delete(root);
     branch_delete(droot);
     fclose(input);
@@ -260,8 +284,7 @@ tree_node_t* diff (tree_node_t* f)
         }
         case POW:
         {
-            if (node_get_type(node_to_left(f)) == VAR &&
-                node_get_type(node_to_right(f)) == NUM)
+            if (LEFT_IS_VAR(f) && RIGHT_IS_NUM(f))
             {
                 int mult = MULT, pw = POW;
                 double old_pow = 0;
@@ -282,6 +305,59 @@ tree_node_t* diff (tree_node_t* f)
         }
     }
     return NULL;
+}
+
+int simplify (tree_node_t* node)
+{
+    if (node_to_left(node))
+        if (simplify(node_to_left(node)))
+            node_add_left(node, calc_node(node_to_left(node)));
+
+    if (node_to_right(node))
+        if (simplify(node_to_right(node)))
+            node_add_right(node, calc_node(node_to_right(node)));
+
+    //fprintf(stderr, "node = %p type = %d\n", node, node_get_type(node));
+
+    if (node_get_type(node) == OP && LEFT_IS_NUM(node) && RIGHT_IS_NUM(node))
+        return 1;
+    else
+        return 0;
+}
+
+tree_node_t* calc_node (tree_node_t* node)
+{
+    int type = node_get_type(node);
+    int val = 0;
+    double val_left = 0, val_right = 0, result;
+    node_get_val(node, &val);
+    node_get_val(node_to_left(node), &val_left);
+    node_get_val(node_to_right(node), &val_right);
+    fprintf(stderr, "val = %d\n", val);
+    if (val == POW && !is_int(val_right))
+        return node;
+    switch(val)
+    {
+        case ADD:
+            result = val_left + val_right;
+            break;
+        case SUB:
+            result = val_left - val_right;
+            break;
+        case MULT:
+            result = val_left * val_right;
+            break;
+        case DIV:
+            result = val_left / val_right;
+            break;
+        case POW:
+            result = pow(val_left, val_right);
+            break;
+        default:
+            return NULL;
+    }
+    branch_delete(node);
+    return new_node(&result, sizeof(result), NUM, NULL, NULL);
 }
 
 int is_num (const char* str)
@@ -310,4 +386,11 @@ char getc_until (FILE* fp, const char* str)
     while (strchr(str, ch) == NULL && ch != 0 && ch != EOF)
         ch = (char)getc(fp);
     return ch;
+}
+
+int is_int(double x)
+{
+    if (abs(modf(x, NULL)) < EPS)
+        return 1;
+    return 0;
 }
