@@ -5,7 +5,7 @@
 
 #define NODE_VAL_P(node) (void*)((char*)&node->right + sizeof(tree_node_t*))
 #define NODE_SIZE(node) (sizeof(long) + 2*sizeof(tree_node_t*) + sizeof(size_t) + node->val_size)
-//#define DETAILED_DUMP
+#define DETAILED_DUMP
 
 struct tree_node_t
 {
@@ -149,14 +149,16 @@ static void add_dot_node(FILE* fp, tree_node_t* node,
                          size_t code)
 {
 #ifdef DETAILED_DUMP
+    int type = node_get_type(node);
     fprintf(fp, "n%zu [label = <\n"
                     "\t<TABLE BORDER=\"0\" CELLBORDER=\"1\" "
                     "CELLSPACING=\"0\" CELLPADDING=\"4\">\n"
                     "\t<TR><TD PORT=\"addr\">addr %p</TD></TR>\n"
+                    "\t<TR><TD PORT=\"type\">type %p</TD></TR>\n"
                     "\t<TR><TD PORT=\"left\">left %p</TD></TR>\n"
                     "\t<TR><TD PORT=\"right\">right %p</TD></TR>\n"
                     "\t<TR><TD PORT=\"val\"> ",
-                    code, node, node->left, node->right);
+                    code, node, type, node->left, node->right);
     print_func(fp, NODE_VAL_P(node), node->type);
     fprintf(fp, "</TD></TR>\n</TABLE>>");
     fprintf(fp, "];\n");

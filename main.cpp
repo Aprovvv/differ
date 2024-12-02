@@ -312,6 +312,33 @@ tree_node_t* diff (tree_node_t* f)
             assert(0);
         }
     }
+
+    if (node_get_type(f) == FUNC)
+    {
+        int val = 0;
+        node_get_val(f, &val);
+        switch(val)
+        {
+            case SIN:
+            {
+                int cos = COS;
+                return new_node(&cos, sizeof(cos), FUNC,
+                                NULL, branch_copy(node_to_right(f)));
+            }
+            case COS:
+            {
+                int sin = SIN, mult = MULT;
+                double m_1 = -1;
+                tree_node_t* minus_1 =
+                    new_node(&m_1, sizeof(m_1), NUM,
+                             NULL, NULL);
+                tree_node_t* sin_node =
+                    new_node(&sin, sizeof(sin), FUNC,
+                             NULL, branch_copy(node_to_right(f)));
+                return new_node(&mult, sizeof(mult), OP, minus_1, sin_node);
+            }
+        }
+    }
     return NULL;
 }
 
@@ -326,10 +353,18 @@ tree_node_t* simplify (tree_node_t* node)
 
 
     if (node_get_type(result) == OP && LEFT_IS_NUM(result) && RIGHT_IS_NUM(result))
+    {
+        fprintf(stderr, "calcing node %p\n", node);
         result = calc_node(result);
+    }
 
     if (node_get_type(result) == OP && (LEFT_IS_NUM(result) || RIGHT_IS_NUM(result)))
+    {
+        fprintf(stderr, "deleting node %p, \n", node);
         result = delete_trivials(result);
+    }
+
+    //tree_graph_dump(node, pr);
 
     return result;
 }
@@ -338,16 +373,17 @@ tree_node_t* delete_trivials (tree_node_t* node)
 {
     int type = node_get_type(node);
     int val = 0;
-    double val_left = 0, val_right = 0;
+    double val_left = 666, val_right = 666;
     node_get_val(node, &val);
-    node_get_val(node_to_left(node), &val_left);
-    node_get_val(node_to_right(node), &val_right);
+    if (LEFT_IS_NUM(node))
+        node_get_val(node_to_left(node), &val_left);
+    if (RIGHT_IS_NUM(node))
+        node_get_val(node_to_right(node), &val_right);
     tree_node_t* result = NULL;
 
     switch(val)
     {
         case ADD:
-        case SUB:
         //TODO: здесь копируется и возвращается вся ненулевая ветка.
         //было бы лучше удалить всего два узла, но нет нужной функции
             if (val_left == 0)
@@ -356,6 +392,7 @@ tree_node_t* delete_trivials (tree_node_t* node)
                 branch_delete(node);
                 return result;
             }
+        case SUB:
             if (val_right == 0)
             {
                 result = branch_copy(node_to_left(node));
@@ -368,6 +405,7 @@ tree_node_t* delete_trivials (tree_node_t* node)
             {
                 double zero = 0;
                 branch_delete(node);
+                fprintf(stderr, "ASD;LFKJAKLW; NHGASDFKJ\n");
                 return new_node(&zero, sizeof(zero), NUM, NULL, NULL);
             }
             if (val_left == 1)
