@@ -8,7 +8,7 @@ tree_node_t* node_add_left(tree_node_t* node, tree_node_t* next_node);
 tree_node_t* node_add_right(tree_node_t* node, tree_node_t* next_node);
 tree_node_t* node_to_left(tree_node_t* node);
 tree_node_t* node_to_right(tree_node_t* node);
-tree_node_t* node_copy(tree_node_t* node);
+tree_node_t* branch_copy(tree_node_t* node);
 
 void node_get_val(tree_node_t* node, void* dest);
 void branch_delete(tree_node_t* node);

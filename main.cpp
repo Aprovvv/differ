@@ -21,7 +21,8 @@ tree_node_t* tree_from_file (FILE* input);
 int pr (FILE* fp, const void* ptr, int type);
 tree_node_t* diff (tree_node_t* f);
 tree_node_t* calc_node (tree_node_t* node);
-int simplify (tree_node_t* node);
+tree_node_t* simplify (tree_node_t* node);
+tree_node_t* delete_trivials (tree_node_t* node);
 
 const double EPS = 10e-5;
 
@@ -93,12 +94,12 @@ int main()
     tree_graph_dump(droot, pr);
     putchar('\n');
 
-    simplify(root);
+    root = simplify(root);
     tree_print(stderr, root, pr);
     tree_graph_dump(root, pr);
     putchar('\n');
 
-    simplify(droot);
+    droot = simplify(droot);
     tree_print(stderr, droot, pr);
     tree_graph_dump(droot, pr);
     putchar('\n');
@@ -257,10 +258,10 @@ tree_node_t* diff (tree_node_t* f)
             int op = MULT;
             tree_node_t* left_mult =
                 new_node(&op, sizeof(op), OP,
-                         diff(node_to_left(f)), node_copy(node_to_right(f)));
+                         diff(node_to_left(f)), branch_copy(node_to_right(f)));
             tree_node_t* right_mult =
                 new_node(&op, sizeof(op), OP,
-                         node_copy(node_to_left(f)), diff(node_to_right(f)));
+                         branch_copy(node_to_left(f)), diff(node_to_right(f)));
             op = ADD;
             return new_node(&op, sizeof(op), OP,
                         left_mult, right_mult);
@@ -272,17 +273,17 @@ tree_node_t* diff (tree_node_t* f)
             tree_node_t* numer =
                 new_node(&sub, sizeof(sub), OP,
                          new_node(&mult, sizeof(mult), OP,
-                                  diff(node_to_left(f)), node_copy(node_to_right(f))),
+                                  diff(node_to_left(f)), branch_copy(node_to_right(f))),
                          new_node(&mult, sizeof(mult), OP,
-                                  node_copy(node_to_left(f)), diff(node_to_right(f))));
+                                  branch_copy(node_to_left(f)), diff(node_to_right(f))));
             tree_node_t* denumer =
                 new_node(&pw, sizeof(pw), OP,
-                         node_copy(node_to_right(f)),
+                         branch_copy(node_to_right(f)),
                          new_node(&two, sizeof(two), NUM,
                                   NULL, NULL));
             return new_node(&div, sizeof(div), OP, numer, denumer);
         }
-        case POW:
+        case POW://FIXME: общий случай
         {
             if (LEFT_IS_VAR(f) && RIGHT_IS_NUM(f))
             {
@@ -293,12 +294,19 @@ tree_node_t* diff (tree_node_t* f)
                 tree_node_t* base =
                     new_node(&mult, sizeof(mult), OP,
                              new_node(&old_pow, sizeof(old_pow), NUM, NULL, NULL),
-                             node_copy(node_to_left(f)));
+                             branch_copy(node_to_left(f)));
                 return new_node(&pw, sizeof(pw), OP,
                                 base,
                                 new_node(&new_pow, sizeof(new_pow), NUM, NULL, NULL));
 
             }
+            if (LEFT_IS_NUM(f) && RIGHT_IS_NUM(f))
+            {
+                double val = 0;
+                df = new_node(&val, sizeof(val), NUM, NULL, NULL);
+                return df;
+            }
+            break;
         }
         default:
             assert(0);
@@ -307,22 +315,99 @@ tree_node_t* diff (tree_node_t* f)
     return NULL;
 }
 
-int simplify (tree_node_t* node)
+tree_node_t* simplify (tree_node_t* node)
 {
+    tree_node_t* result = node;
+
     if (node_to_left(node))
-        if (simplify(node_to_left(node)))
-            node_add_left(node, calc_node(node_to_left(node)));
-
+        node_add_left(node, simplify(node_to_left(node)));
     if (node_to_right(node))
-        if (simplify(node_to_right(node)))
-            node_add_right(node, calc_node(node_to_right(node)));
+        node_add_right(node, simplify(node_to_right(node)));
 
-    //fprintf(stderr, "node = %p type = %d\n", node, node_get_type(node));
 
-    if (node_get_type(node) == OP && LEFT_IS_NUM(node) && RIGHT_IS_NUM(node))
-        return 1;
-    else
-        return 0;
+    if (node_get_type(result) == OP && LEFT_IS_NUM(result) && RIGHT_IS_NUM(result))
+        result = calc_node(result);
+
+    if (node_get_type(result) == OP && (LEFT_IS_NUM(result) || RIGHT_IS_NUM(result)))
+        result = delete_trivials(result);
+
+    return result;
+}
+
+tree_node_t* delete_trivials (tree_node_t* node)
+{
+    int type = node_get_type(node);
+    int val = 0;
+    double val_left = 0, val_right = 0;
+    node_get_val(node, &val);
+    node_get_val(node_to_left(node), &val_left);
+    node_get_val(node_to_right(node), &val_right);
+    tree_node_t* result = NULL;
+
+    switch(val)
+    {
+        case ADD:
+        case SUB:
+        //TODO: здесь копируется и возвращается вся ненулевая ветка.
+        //было бы лучше удалить всего два узла, но нет нужной функции
+            if (val_left == 0)
+            {
+                result = branch_copy(node_to_right(node));
+                branch_delete(node);
+                return result;
+            }
+            if (val_right == 0)
+            {
+                result = branch_copy(node_to_left(node));
+                branch_delete(node);
+                return result;
+            }
+            break;
+        case MULT:
+            if (val_right == 0)
+            {
+                double zero = 0;
+                branch_delete(node);
+                return new_node(&zero, sizeof(zero), NUM, NULL, NULL);
+            }
+            if (val_left == 1)
+            {
+                result = branch_copy(node_to_right(node));
+                branch_delete(node);
+                return result;
+            }
+        case DIV:
+            if (val_left == 0)
+            {
+                double zero = 0;
+                branch_delete(node);
+                return new_node(&zero, sizeof(zero), NUM, NULL, NULL);
+            }
+            if (val_right == 1)
+            {
+                result = branch_copy(node_to_left(node));
+                branch_delete(node);
+                return result;
+            }
+            break;
+        case POW:
+            if (val_right == 1)
+            {
+                result = branch_copy(node_to_left(node));
+                branch_delete(node);
+                return result;
+            }
+            if (val_right == 0)
+            {
+                double one = 1;
+                branch_delete(node);
+                return new_node(&one, sizeof(one), NUM, NULL, NULL);
+            }
+            break;
+        default:
+            return NULL;
+    }
+    return node;
 }
 
 tree_node_t* calc_node (tree_node_t* node)
@@ -333,9 +418,13 @@ tree_node_t* calc_node (tree_node_t* node)
     node_get_val(node, &val);
     node_get_val(node_to_left(node), &val_left);
     node_get_val(node_to_right(node), &val_right);
-    fprintf(stderr, "val = %d\n", val);
-    if (val == POW && !is_int(val_right))
-        return node;
+    //fprintf(stderr, "val = %d\n", val);
+    fprintf(stderr, "&node = %p; type = %d; left %f; right %f\n", node, node_get_type(node), val_left, val_right);
+    fprintf(stderr, "is_int = %d\n", is_int(val_left));
+
+    if (val == POW)
+        if (!is_int(val_right))
+            return node;
     switch(val)
     {
         case ADD:
@@ -390,7 +479,9 @@ char getc_until (FILE* fp, const char* str)
 
 int is_int(double x)
 {
-    if (abs(modf(x, NULL)) < EPS)
+    double temp = 0;
+    //fprintf(stderr, "x = %f\n", x);
+    if (abs(modf(x, &temp)) < EPS)
         return 1;
     return 0;
 }

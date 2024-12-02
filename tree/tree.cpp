@@ -5,7 +5,7 @@
 
 #define NODE_VAL_P(node) (void*)((char*)&node->right + sizeof(tree_node_t*))
 #define NODE_SIZE(node) (sizeof(long) + 2*sizeof(tree_node_t*) + sizeof(size_t) + node->val_size)
-#define DETAILED_DUMP
+//#define DETAILED_DUMP
 
 struct tree_node_t
 {
@@ -80,10 +80,10 @@ tree_node_t* node_add_right(tree_node_t* node, tree_node_t* next_node)
     return node->right = next_node;
 }
 
-tree_node_t* node_copy(tree_node_t* node)
+tree_node_t* branch_copy(tree_node_t* node)
 {
-    tree_node_t* new_left = node->left == NULL ? NULL : node_copy(node->left);
-    tree_node_t* new_right = node->right == NULL ? NULL : node_copy(node->right);
+    tree_node_t* new_left = node->left == NULL ? NULL : branch_copy(node->left);
+    tree_node_t* new_right = node->right == NULL ? NULL : branch_copy(node->right);
     return new_node(NODE_VAL_P(node), node->val_size, node->type, new_left, new_right);
 }
 
