@@ -321,9 +321,13 @@ tree_node_t* diff (tree_node_t* f)
         {
             case SIN:
             {
-                int cos = COS;
-                return new_node(&cos, sizeof(cos), FUNC,
-                                NULL, branch_copy(node_to_right(f)));
+                int cos = COS, mult = MULT;
+
+                tree_node_t* cos_node =
+                    new_node(&cos, sizeof(cos), FUNC,
+                             NULL, branch_copy(node_to_right(f)));
+                return new_node(&mult, sizeof(mult), OP,
+                                cos_node, diff(node_to_right(f)));
             }
             case COS:
             {
@@ -335,8 +339,12 @@ tree_node_t* diff (tree_node_t* f)
                 tree_node_t* sin_node =
                     new_node(&sin, sizeof(sin), FUNC,
                              NULL, branch_copy(node_to_right(f)));
-                return new_node(&mult, sizeof(mult), OP, minus_1, sin_node);
+                tree_node_t* minus_sin =
+                    new_node(&mult, sizeof(mult), OP, minus_1, sin_node);
+                return new_node(&mult, sizeof(mult), OP,
+                                minus_sin, diff(node_to_right(f)));
             }
+            //case LN:
         }
     }
     return NULL;
