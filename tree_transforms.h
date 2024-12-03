@@ -7,8 +7,10 @@
 #define RIGHT_IS_VAR(x) (node_to_right(x) && node_get_type(node_to_right(x)) == VAR)
 #define LEFT_IS_OP(x) (node_to_left(x) && node_get_type(node_to_left(x)) == OP)
 #define RIGHT_IS_OP(x) (node_to_right(x) && node_get_type(node_to_right(x)) == OP)
+#define LEFT_IS_FUNC(x) (node_to_left(x) && node_get_type(node_to_left(x)) == FUNC)
+#define RIGHT_IS_FUNC(x) (node_to_right(x) && node_get_type(node_to_right(x)) == FUNC)
 
-const double EPS = 10e-5;
+const double EPS = 10e-6;
 
 struct ARG {
     const char* str;
@@ -38,7 +40,8 @@ enum FUNC_CODES {
     TG,
     CTG,
     LN,
-    EXP
+    EXP,
+    SQRT
 };
 
 const struct ARG VARS[] = {
@@ -59,7 +62,8 @@ const struct ARG FUNCS[] = {
     {"tg", TG},
     {"ctg", CTG},
     {"ln", LN},
-    {"exp", EXP}
+    {"exp", EXP},
+    {"sqrt", SQRT}
 };
 
 tree_node_t* diff (tree_node_t* f);

@@ -94,7 +94,7 @@ tree_node_t* diff (tree_node_t* f)
             assert(0);
         }
     }
-
+    //TODO: остальные функции
     if (node_get_type(f) == FUNC)
     {
         int val = 0;
@@ -145,13 +145,13 @@ tree_node_t* simplify (tree_node_t* node)
 
     if (node_get_type(result) == OP && LEFT_IS_NUM(result) && RIGHT_IS_NUM(result))
     {
-        fprintf(stderr, "calcing node %p\n", node);
+        //fprintf(stderr, "calcing node %p\n", node);
         result = calc_node(result);
     }
 
     if (node_get_type(result) == OP && (LEFT_IS_NUM(result) || RIGHT_IS_NUM(result)))
     {
-        fprintf(stderr, "deleting node %p, \n", node);
+        //fprintf(stderr, "deleting node %p, \n", node);
         result = delete_trivials(result);
     }
 
@@ -197,7 +197,7 @@ tree_node_t* delete_trivials (tree_node_t* node)
         {
             double zero = 0;
             branch_delete(node);
-            fprintf(stderr, "ASD;LFKJAKLW; NHGASDFKJ\n");
+            //fprintf(stderr, "ASD;LFKJAKLW; NHGASDFKJ\n");
             return new_node(&zero, sizeof(zero), NUM, NULL, NULL);
         }
         if (val_left == 1)
@@ -249,8 +249,8 @@ tree_node_t* calc_node (tree_node_t* node)
     node_get_val(node, &val);
     node_get_val(node_to_left(node), &val_left);
     node_get_val(node_to_right(node), &val_right);
-    fprintf(stderr, "&node = %p; type = %d; left %f; right %f\n", node, node_get_type(node), val_left, val_right);
-    fprintf(stderr, "is_int = %d\n", is_int(val_left));
+    //fprintf(stderr, "&node = %p; type = %d; left %f; right %f\n", node, node_get_type(node), val_left, val_right);
+    //fprintf(stderr, "is_int = %d\n", is_int(val_left));
 
     if (val == POW)
         if (!is_int(val_right))

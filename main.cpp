@@ -6,6 +6,7 @@
 #include <math.h>
 #include "tree/tree.h"
 #include "tree_transforms.h"
+#include "latexing.h"
 
 int is_num (const char* str);
 char next_nonspace (FILE* fp);
@@ -19,25 +20,32 @@ int main()
     tree_node_t* root = tree_from_file(input);
     if (root == NULL)
         return EXIT_FAILURE;
-    fprintf(stderr, "tree:\n");
-    tree_print(stderr, root, pr);
+    //fprintf(stderr, "tree:\n");
+    //tree_print(stderr, root, pr);
     tree_graph_dump(root, pr);
-    putchar('\n');
+    //putchar('\n');
 
     tree_node_t* droot = diff(root);
-    tree_print(stderr, droot, pr);
+    //tree_print(stderr, droot, pr);
     tree_graph_dump(droot, pr);
-    putchar('\n');
+    //putchar('\n');
 
     root = simplify(root);
-    tree_print(stderr, root, pr);
+    //tree_print(stderr, root, pr);
     tree_graph_dump(root, pr);
-    putchar('\n');
+    //putchar('\n');
 
     droot = simplify(droot);
-    tree_print(stderr, droot, pr);
+    //tree_print(stderr, droot, pr);
     tree_graph_dump(droot, pr);
-    putchar('\n');
+    //putchar('\n');
+
+    FILE* latex_root = fopen("root.txt", "w");
+    FILE* latex_droot = fopen("droot.txt", "w");
+    latex_tree(latex_root, root);
+    latex_tree(latex_droot, droot);
+    fclose(latex_root);
+    fclose(latex_droot);
 
     branch_delete(root);
     branch_delete(droot);
@@ -85,7 +93,7 @@ int pr (FILE* fp, const void* ptr, int type)
 tree_node_t* tree_from_file (FILE* fp)
 {
     char ch = getc(fp);
-    fprintf(stderr, "start ch = %c\n", ch);
+    //fprintf(stderr, "start ch = %c\n", ch);
     tree_node_t* node_temp_ptr = NULL;
     tree_node_t* node = NULL;
     if (ch == '(')
@@ -153,7 +161,7 @@ tree_node_t* tree_from_file (FILE* fp)
         node_add_right(node, node_temp_ptr);
         getc(fp);
     }
-    fprintf(stderr, "arg = %s; ch = %c\n", arg, ch);
+    //fprintf(stderr, "arg = %s; ch = %c\n", arg, ch);
     return node;
 }
 
