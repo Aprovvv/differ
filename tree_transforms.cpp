@@ -9,21 +9,22 @@
 
 static int is_int(double x);
 
+static tree_node_t* diff_num(void);
+static tree_node_t* diff_var(void);
+static tree_node_t* diff_add_sub (tree_node_t* f);
+static tree_node_t* diff_mult (tree_node_t* f);
+static tree_node_t* diff_div (tree_node_t* f);
+static tree_node_t* diff_pow (tree_node_t* f);
+static tree_node_t* diff_sin (tree_node_t* f);
+static tree_node_t* diff_cos (tree_node_t* f);
+
 tree_node_t* diff (tree_node_t* f)
 {
     tree_node_t* df = NULL;
     if (node_get_type(f) == NUM)
-    {
-        double val = 0;
-        df = new_node(&val, sizeof(val), NUM, NULL, NULL);
-        return df;
-    }
+        return diff_num();
     if (node_get_type(f) == VAR)
-    {
-        double val = 1;
-        df = new_node(&val, sizeof(val), NUM, NULL, NULL);
-        return df;
-    }
+        return diff_var();
     if (node_get_type(f) == OP)
     {
         int val = 0;
@@ -32,64 +33,13 @@ tree_node_t* diff (tree_node_t* f)
         {
         case ADD:
         case SUB:
-            return new_node(&val, sizeof(val), OP,
-                            diff(node_to_left(f)), diff(node_to_right(f)));
+            return diff_add_sub(f);
         case MULT:
-        {
-            int op = MULT;
-            tree_node_t* left_mult =
-                new_node(&op, sizeof(op), OP,
-                         diff(node_to_left(f)), branch_copy(node_to_right(f)));
-            tree_node_t* right_mult =
-                new_node(&op, sizeof(op), OP,
-                         branch_copy(node_to_left(f)), diff(node_to_right(f)));
-            op = ADD;
-            return new_node(&op, sizeof(op), OP,
-                        left_mult, right_mult);
-        }
+            return diff_mult(f);
         case DIV:
-        {
-            int mult = MULT, sub = SUB, div = DIV, pw = POW;
-            double two = 2;
-            tree_node_t* numer =
-                new_node(&sub, sizeof(sub), OP,
-                         new_node(&mult, sizeof(mult), OP,
-                                  diff(node_to_left(f)), branch_copy(node_to_right(f))),
-                         new_node(&mult, sizeof(mult), OP,
-                                  branch_copy(node_to_left(f)), diff(node_to_right(f))));
-            tree_node_t* denumer =
-                new_node(&pw, sizeof(pw), OP,
-                         branch_copy(node_to_right(f)),
-                         new_node(&two, sizeof(two), NUM,
-                                  NULL, NULL));
-            return new_node(&div, sizeof(div), OP, numer, denumer);
-        }
-        case POW://FIXME: общий случай
-        {
-            if (LEFT_IS_VAR(f) && RIGHT_IS_NUM(f))
-            {
-                int mult = MULT, pw = POW;
-                double old_pow = 0;
-                node_get_val(node_to_right(f), &old_pow);
-                double new_pow = old_pow - 1;
-
-                tree_node_t* base =
-                    new_node(&mult, sizeof(mult), OP,
-                             new_node(&old_pow, sizeof(old_pow), NUM, NULL, NULL),
-                             branch_copy(node_to_left(f)));
-                return new_node(&pw, sizeof(pw), OP,
-                                base,
-                                new_node(&new_pow, sizeof(new_pow), NUM, NULL, NULL));
-
-            }
-            if (LEFT_IS_NUM(f) && RIGHT_IS_NUM(f))
-            {
-                double val = 0;
-                df = new_node(&val, sizeof(val), NUM, NULL, NULL);
-                return df;
-            }
-            break;
-        }
+            return diff_div(f);
+        case POW:
+            return diff_pow(f);
         default:
             assert(0);
         }
@@ -102,36 +52,123 @@ tree_node_t* diff (tree_node_t* f)
         switch(val)
         {
             case SIN:
-            {
-                int cos = COS, mult = MULT;
-
-                tree_node_t* cos_node =
-                    new_node(&cos, sizeof(cos), FUNC,
-                             NULL, branch_copy(node_to_right(f)));
-                return new_node(&mult, sizeof(mult), OP,
-                                cos_node, diff(node_to_right(f)));
-            }
+                return diff_sin(f);
             case COS:
-            {
-                int sin = SIN, mult = MULT;
-                double m_1 = -1;
-
-                tree_node_t* minus_1 =
-                    new_node(&m_1, sizeof(m_1), NUM,
-                             NULL, NULL);
-                tree_node_t* sin_node =
-                    new_node(&sin, sizeof(sin), FUNC,
-                             NULL, branch_copy(node_to_right(f)));
-                tree_node_t* minus_sin =
-                    new_node(&mult, sizeof(mult), OP, minus_1, sin_node);
-                return new_node(&mult, sizeof(mult), OP,
-                                minus_sin, diff(node_to_right(f)));
-            }
+                return diff_cos(f);
             //case LN:
         }
     }
     return NULL;
 }
+
+static tree_node_t* diff_num (void)
+{
+    double val = 0;
+    return new_node(&val, sizeof(val), NUM, NULL, NULL);
+}
+
+static tree_node_t* diff_var (void)
+{
+    double val = 1;
+    return new_node(&val, sizeof(val), NUM, NULL, NULL);
+}
+
+static tree_node_t* diff_add_sub (tree_node_t* f)
+{
+    int val = 0;
+    node_get_val(f, &val);
+    return new_node(&val, sizeof(val), OP,
+                    diff(node_to_left(f)), diff(node_to_right(f)));
+}
+
+static tree_node_t* diff_mult (tree_node_t* f)
+{
+    int op = MULT;
+    tree_node_t* left_mult =
+        new_node(&op, sizeof(op), OP,
+                    diff(node_to_left(f)), branch_copy(node_to_right(f)));
+    tree_node_t* right_mult =
+        new_node(&op, sizeof(op), OP,
+                    branch_copy(node_to_left(f)), diff(node_to_right(f)));
+    op = ADD;
+    return new_node(&op, sizeof(op), OP,
+                left_mult, right_mult);
+}
+
+static tree_node_t* diff_div (tree_node_t* f)
+{
+    int mult = MULT, sub = SUB, div = DIV, pw = POW;
+    double two = 2;
+    tree_node_t* numer =
+        new_node(&sub, sizeof(sub), OP,
+                    new_node(&mult, sizeof(mult), OP,
+                            diff(node_to_left(f)), branch_copy(node_to_right(f))),
+                    new_node(&mult, sizeof(mult), OP,
+                            branch_copy(node_to_left(f)), diff(node_to_right(f))));
+    tree_node_t* denumer =
+        new_node(&pw, sizeof(pw), OP,
+                    branch_copy(node_to_right(f)),
+                    new_node(&two, sizeof(two), NUM,
+                            NULL, NULL));
+    return new_node(&div, sizeof(div), OP, numer, denumer);
+}
+
+
+static tree_node_t* diff_pow (tree_node_t* f)
+//FIXME: общий случай
+{
+    if (LEFT_IS_VAR(f) && RIGHT_IS_NUM(f))
+    {
+        int mult = MULT, pw = POW;
+        double old_pow = 0;
+        node_get_val(node_to_right(f), &old_pow);
+        double new_pow = old_pow - 1;
+
+        tree_node_t* base =
+            new_node(&mult, sizeof(mult), OP,
+                    new_node(&old_pow, sizeof(old_pow), NUM, NULL, NULL),
+                    branch_copy(node_to_left(f)));
+        return new_node(&pw, sizeof(pw), OP,
+                        base,
+                        new_node(&new_pow, sizeof(new_pow), NUM, NULL, NULL));
+
+    }
+    if (LEFT_IS_NUM(f) && RIGHT_IS_NUM(f))
+    {
+        double val = 0;
+        return new_node(&val, sizeof(val), NUM, NULL, NULL);
+    }
+}
+
+static tree_node_t* diff_sin (tree_node_t* f)
+{
+    int cos = COS, mult = MULT;
+
+    tree_node_t* cos_node =
+        new_node(&cos, sizeof(cos), FUNC,
+                    NULL, branch_copy(node_to_right(f)));
+    return new_node(&mult, sizeof(mult), OP,
+                    cos_node, diff(node_to_right(f)));
+}
+
+static tree_node_t* diff_cos (tree_node_t* f)
+{
+    int sin = SIN, mult = MULT;
+    double m_1 = -1;
+
+    tree_node_t* minus_1 =
+        new_node(&m_1, sizeof(m_1), NUM,
+                    NULL, NULL);
+    tree_node_t* sin_node =
+        new_node(&sin, sizeof(sin), FUNC,
+                    NULL, branch_copy(node_to_right(f)));
+    tree_node_t* minus_sin =
+        new_node(&mult, sizeof(mult), OP, minus_1, sin_node);
+    return new_node(&mult, sizeof(mult), OP,
+                    minus_sin, diff(node_to_right(f)));
+}
+
+
 
 tree_node_t* simplify (tree_node_t* node)
 {
@@ -162,7 +199,6 @@ tree_node_t* simplify (tree_node_t* node)
 
 tree_node_t* delete_trivials (tree_node_t* node)
 {
-    int type = node_get_type(node);
     int val = 0;
     double val_left = 666, val_right = 666;
 
