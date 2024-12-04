@@ -8,72 +8,52 @@
 #include "tree_transforms.h"
 
 static int is_int(double x);
-
-static tree_node_t* diff_num(void);
-static tree_node_t* diff_var(void);
-static tree_node_t* diff_add_sub (tree_node_t* f);
-static tree_node_t* diff_mult (tree_node_t* f);
-static tree_node_t* diff_div (tree_node_t* f);
-static tree_node_t* diff_pow (tree_node_t* f);
-static tree_node_t* diff_sin (tree_node_t* f);
-static tree_node_t* diff_cos (tree_node_t* f);
+static int nod (int a, int b);
 
 tree_node_t* diff (tree_node_t* f)
 {
     tree_node_t* df = NULL;
     if (node_get_type(f) == NUM)
-        return diff_num();
+        return diff_num(f);
     if (node_get_type(f) == VAR)
-        return diff_var();
+        return diff_var(f);
     if (node_get_type(f) == OP)
     {
         int val = 0;
         node_get_val(f, &val);
-        switch(val)
-        {
-        case ADD:
-        case SUB:
-            return diff_add_sub(f);
-        case MULT:
-            return diff_mult(f);
-        case DIV:
-            return diff_div(f);
-        case POW:
-            return diff_pow(f);
-        default:
-            assert(0);
-        }
+        for (int i = 0; i < sizeof(OPS)/sizeof(OPS[0]); i++)
+            if (OPS[i].arg_code == val)
+                return OPS[i].diff_func(f);
+
+        assert(0 && "UNDEFINED OPERATOR");
     }
     //TODO: остальные функции
     if (node_get_type(f) == FUNC)
     {
         int val = 0;
         node_get_val(f, &val);
-        switch(val)
-        {
-            case SIN:
-                return diff_sin(f);
-            case COS:
-                return diff_cos(f);
-            //case LN:
-        }
+        for (int i = 0; i < sizeof(FUNCS)/sizeof(FUNCS[0]); i++)
+            if (FUNCS[i].arg_code == val)
+                return FUNCS[i].diff_func(f);
+
+        assert(0 && "UNDEFINED FUNCTION");
     }
     return NULL;
 }
 
-static tree_node_t* diff_num (void)
+tree_node_t* diff_num (tree_node_t* f)
 {
     double val = 0;
     return new_node(&val, sizeof(val), NUM, NULL, NULL);
 }
 
-static tree_node_t* diff_var (void)
+tree_node_t* diff_var (tree_node_t* f)
 {
     double val = 1;
     return new_node(&val, sizeof(val), NUM, NULL, NULL);
 }
 
-static tree_node_t* diff_add_sub (tree_node_t* f)
+tree_node_t* diff_add_sub (tree_node_t* f)
 {
     int val = 0;
     node_get_val(f, &val);
@@ -81,7 +61,7 @@ static tree_node_t* diff_add_sub (tree_node_t* f)
                     diff(node_to_left(f)), diff(node_to_right(f)));
 }
 
-static tree_node_t* diff_mult (tree_node_t* f)
+tree_node_t* diff_mult (tree_node_t* f)
 {
     int op = MULT;
     tree_node_t* left_mult =
@@ -95,7 +75,7 @@ static tree_node_t* diff_mult (tree_node_t* f)
                 left_mult, right_mult);
 }
 
-static tree_node_t* diff_div (tree_node_t* f)
+tree_node_t* diff_div (tree_node_t* f)
 {
     int mult = MULT, sub = SUB, div = DIV, pw = POW;
     double two = 2;
@@ -114,7 +94,7 @@ static tree_node_t* diff_div (tree_node_t* f)
 }
 
 
-static tree_node_t* diff_pow (tree_node_t* f)
+tree_node_t* diff_pow (tree_node_t* f)
 //FIXME: общий случай
 {
     if (LEFT_IS_VAR(f) && RIGHT_IS_NUM(f))
@@ -140,7 +120,7 @@ static tree_node_t* diff_pow (tree_node_t* f)
     }
 }
 
-static tree_node_t* diff_sin (tree_node_t* f)
+tree_node_t* diff_sin (tree_node_t* f)
 {
     int cos = COS, mult = MULT;
 
@@ -151,7 +131,7 @@ static tree_node_t* diff_sin (tree_node_t* f)
                     cos_node, diff(node_to_right(f)));
 }
 
-static tree_node_t* diff_cos (tree_node_t* f)
+tree_node_t* diff_cos (tree_node_t* f)
 {
     int sin = SIN, mult = MULT;
     double m_1 = -1;
@@ -168,6 +148,62 @@ static tree_node_t* diff_cos (tree_node_t* f)
                     minus_sin, diff(node_to_right(f)));
 }
 
+tree_node_t* diff_tg (tree_node_t* f)
+{
+    int div = DIV, pw = POW, cos = COS;
+    double two = 2;
+    return new_node(&div, sizeof(div), OP,
+                    diff(node_to_right(f)),
+                    new_node(&pw, sizeof(pw), OP,
+                             new_node(&cos, sizeof(cos), FUNC,
+                                      NULL, branch_copy(node_to_right(f))),
+                             new_node(&two, sizeof(two), NUM,
+                                      NULL, NULL)));
+
+}
+
+tree_node_t* diff_ctg (tree_node_t* f)
+{
+    int div = DIV, pw = POW, sin = SIN, mult = MULT;
+    double two = 2, minus_1 = -1;
+    return new_node(&div, sizeof(div), OP,
+                    new_node(&mult, sizeof(mult), OP,
+                             new_node(&minus_1, sizeof(minus_1), NUM, NULL, NULL),
+                             diff(node_to_right(f))),
+                    new_node(&pw, sizeof(pw), OP,
+                             new_node(&sin, sizeof(sin), FUNC,
+                                      NULL, branch_copy(node_to_right(f))),
+                             new_node(&two, sizeof(two), NUM,
+                                      NULL, NULL)));
+
+}
+
+tree_node_t* diff_ln (tree_node_t* f)
+{
+    int div = DIV;
+    return new_node(&div, sizeof(div), OP,
+                    diff(node_to_right(f)),
+                    branch_copy(node_to_right(f)));
+}
+
+tree_node_t* diff_exp (tree_node_t* f)
+{
+    int mult = MULT;
+    return new_node(&mult, sizeof(mult), OP,
+                    diff(node_to_right(f)),
+                    branch_copy(f));
+}
+
+tree_node_t* diff_sqrt (tree_node_t* f)
+{
+    int div = DIV, mult = MULT;
+    double two = 2;
+    return new_node(&div, sizeof(div), OP,
+                    diff(node_to_right(f)),
+                    new_node(&mult, sizeof(mult), OP,
+                             new_node(&two, sizeof(two), NUM, NULL, NULL),
+                             branch_copy(f)));
+}
 
 
 tree_node_t* simplify (tree_node_t* node)
@@ -280,7 +316,7 @@ tree_node_t* calc_node (tree_node_t* node)
 {
     int type = node_get_type(node);
     int val = 0;
-    double val_left = 0, val_right = 0, result;
+    double val_left = 0, val_right = 0, result = 0;
 
     node_get_val(node, &val);
     node_get_val(node_to_left(node), &val_left);
@@ -303,6 +339,20 @@ tree_node_t* calc_node (tree_node_t* node)
             result = val_left * val_right;
             break;
         case DIV:
+            //FIXME бля поч не работает
+            /*if (val_right == 0)
+                return NULL;
+
+            if (is_int(val_left) && is_int(val_right) && !is_int(val_left/val_right))
+            {
+                int NOD = nod((int)val_left, (int)val_right);
+                val_left /= NOD;
+                val_right /= NOD;
+                node_set_val(node_to_left(node), &val_left);
+                node_set_val(node_to_right(node), &val_right);
+                return node;
+            }*/
+
             result = val_left / val_right;
             break;
         case POW:
@@ -315,7 +365,6 @@ tree_node_t* calc_node (tree_node_t* node)
     return new_node(&result, sizeof(result), NUM, NULL, NULL);
 }
 
-
 static int is_int(double x)
 {
     double temp = 0;
@@ -323,3 +372,17 @@ static int is_int(double x)
         return 1;
     return 0;
 }
+
+static int nod (int a, int b)
+{
+    while(a > 0 && b > 0)
+
+        if(a > b)
+            a %= b;
+
+        else
+            b %= a;
+
+    return a + b;
+}
+

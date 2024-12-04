@@ -10,7 +10,7 @@ static int latex_num (FILE* fp, tree_node_t* node);
 static int latex_var (FILE* fp, tree_node_t* node);
 static int latex_func (FILE* fp, tree_node_t* node);
 static int latex_op (FILE* fp, tree_node_t* node);
-void smart_double_print(FILE* fp, double x);
+static void smart_double_print(FILE* fp, double x);
 
 
 int pr (FILE* fp, const void* ptr, int type);
@@ -66,8 +66,17 @@ static int latex_func (FILE* fp, tree_node_t* node)
             break;;
         }
     }
-    latex_tree(fp, node_to_right(node));
-    fprintf(fp, "}");
+    if (RIGHT_IS_NUM(node) || RIGHT_IS_VAR(node))
+    {
+        latex_tree(fp, node_to_right(node));
+        fprintf(fp, "}");
+    }
+    else
+    {
+        fprintf(fp, "(");
+        latex_tree(fp, node_to_right(node));
+        fprintf(fp, ")}");
+    }
     return 0;
 }
 
@@ -108,7 +117,7 @@ static int latex_op (FILE* fp, tree_node_t* node)
             latex_tree(fp, node_to_left(node));
         }
 
-        if (RIGHT_IS_NUM(node))
+        //if (RIGHT_IS_NUM(node))
             fprintf(fp, "*");
 
         if (RIGHT_IS_OP(node))
@@ -160,7 +169,7 @@ static int latex_op (FILE* fp, tree_node_t* node)
     }
 }
 
-void smart_double_print(FILE* fp, double x)
+static void smart_double_print(FILE* fp, double x)
 {
     int sign_count = 0;
     double i_part = 0;
