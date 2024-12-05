@@ -8,6 +8,46 @@
 #include "tree_transforms.h"
 #include "latexing.h"
 
+static tree_node_t* diff_num(tree_node_t* f);
+static tree_node_t* diff_var(tree_node_t* f);
+static tree_node_t* diff_add_sub (tree_node_t* f);
+static tree_node_t* diff_mult (tree_node_t* f);
+static tree_node_t* diff_div (tree_node_t* f);
+static tree_node_t* diff_pow (tree_node_t* f);
+static tree_node_t* diff_sin (tree_node_t* f);
+static tree_node_t* diff_cos (tree_node_t* f);
+static tree_node_t* diff_tg (tree_node_t* f);
+static tree_node_t* diff_ctg (tree_node_t* f);
+static tree_node_t* diff_ln (tree_node_t* f);
+static tree_node_t* diff_exp (tree_node_t* f);
+static tree_node_t* diff_sqrt (tree_node_t* f);
+
+extern const struct ARG VARS[] = {
+    {"x", 'x', diff_var},
+};
+
+extern const struct ARG OPS[] = {
+    {"+", ADD, diff_add_sub},
+    {"-", SUB, diff_add_sub},
+    {"*", MULT, diff_mult},
+    {"/", DIV, diff_div},
+    {"^", POW, diff_pow}
+};
+
+extern const struct ARG FUNCS[] = {
+    {"sin", SIN, diff_sin},
+    {"cos", COS, diff_cos},
+    {"tg", TG, diff_tg},
+    {"ctg", CTG, diff_ctg},
+    {"ln", LN, diff_ln},
+    {"exp", EXP, diff_exp},
+    {"sqrt", SQRT, diff_sqrt}
+};
+
+extern const size_t VARS_COUNT = sizeof(VARS)/sizeof(VARS[0]);
+extern const size_t OPS_COUNT = sizeof(OPS)/sizeof(OPS[0]);
+extern const size_t FUNCS_COUNT = sizeof(FUNCS)/sizeof(FUNCS[0]);
+
 static int is_int(double x);
 
 void diff_and_tex (tree_node_t* root)
@@ -65,19 +105,19 @@ tree_node_t* diff (tree_node_t* f)
     return NULL;
 }
 
-tree_node_t* diff_num (tree_node_t* f)
+static tree_node_t* diff_num (tree_node_t* f)
 {
     double val = 0;
     return new_node(&val, sizeof(val), NUM, NULL, NULL);
 }
 
-tree_node_t* diff_var (tree_node_t* f)
+static tree_node_t* diff_var (tree_node_t* f)
 {
     double val = 1;
     return new_node(&val, sizeof(val), NUM, NULL, NULL);
 }
 
-tree_node_t* diff_add_sub (tree_node_t* f)
+static tree_node_t* diff_add_sub (tree_node_t* f)
 {
     int val = 0;
     node_get_val(f, &val);
@@ -85,7 +125,7 @@ tree_node_t* diff_add_sub (tree_node_t* f)
                     diff(node_to_left(f)), diff(node_to_right(f)));
 }
 
-tree_node_t* diff_mult (tree_node_t* f)
+static tree_node_t* diff_mult (tree_node_t* f)
 {
     int op = MULT;
     tree_node_t* left_mult =
@@ -99,7 +139,7 @@ tree_node_t* diff_mult (tree_node_t* f)
                 left_mult, right_mult);
 }
 
-tree_node_t* diff_div (tree_node_t* f)
+static tree_node_t* diff_div (tree_node_t* f)
 {
     int mult = MULT, sub = SUB, div = DIV, pw = POW;
     double two = 2;
@@ -118,8 +158,7 @@ tree_node_t* diff_div (tree_node_t* f)
 }
 
 
-tree_node_t* diff_pow (tree_node_t* f)
-//FIXME: общий случай
+static tree_node_t* diff_pow (tree_node_t* f)
 {
     if (RIGHT_IS_NUM(f))
     {
@@ -164,7 +203,7 @@ tree_node_t* diff_pow (tree_node_t* f)
                     branch_copy(f));
 }
 
-tree_node_t* diff_sin (tree_node_t* f)
+static tree_node_t* diff_sin (tree_node_t* f)
 {
     int cos = COS, mult = MULT;
 
@@ -175,7 +214,7 @@ tree_node_t* diff_sin (tree_node_t* f)
                     cos_node, diff(node_to_right(f)));
 }
 
-tree_node_t* diff_cos (tree_node_t* f)
+static tree_node_t* diff_cos (tree_node_t* f)
 {
     int sin = SIN, mult = MULT;
     double m_1 = -1;
@@ -192,7 +231,7 @@ tree_node_t* diff_cos (tree_node_t* f)
                     minus_sin, diff(node_to_right(f)));
 }
 
-tree_node_t* diff_tg (tree_node_t* f)
+static tree_node_t* diff_tg (tree_node_t* f)
 {
     int div = DIV, pw = POW, cos = COS;
     double two = 2;
@@ -206,7 +245,7 @@ tree_node_t* diff_tg (tree_node_t* f)
 
 }
 
-tree_node_t* diff_ctg (tree_node_t* f)
+static tree_node_t* diff_ctg (tree_node_t* f)
 {
     int div = DIV, pw = POW, sin = SIN, mult = MULT;
     double two = 2, minus_1 = -1;
@@ -222,7 +261,7 @@ tree_node_t* diff_ctg (tree_node_t* f)
 
 }
 
-tree_node_t* diff_ln (tree_node_t* f)
+static tree_node_t* diff_ln (tree_node_t* f)
 {
     int div = DIV;
     return new_node(&div, sizeof(div), OP,
@@ -230,7 +269,7 @@ tree_node_t* diff_ln (tree_node_t* f)
                     branch_copy(node_to_right(f)));
 }
 
-tree_node_t* diff_exp (tree_node_t* f)
+static tree_node_t* diff_exp (tree_node_t* f)
 {
     int mult = MULT;
     return new_node(&mult, sizeof(mult), OP,
@@ -238,7 +277,7 @@ tree_node_t* diff_exp (tree_node_t* f)
                     branch_copy(f));
 }
 
-tree_node_t* diff_sqrt (tree_node_t* f)
+static tree_node_t* diff_sqrt (tree_node_t* f)
 {
     int div = DIV, mult = MULT;
     double two = 2;

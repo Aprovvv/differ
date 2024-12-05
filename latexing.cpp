@@ -19,10 +19,10 @@ int pr (FILE* fp, const void* ptr, int type);
 FILE* create_texfile (char* filename)
 {
     struct stat fileinfo = {};
-    stat("latex/texhat.tex", &fileinfo);
+    stat("latex/texhat.txt", &fileinfo);
     char* buf = (char*) calloc(1, fileinfo.st_size);
 
-    FILE* hat = fopen("latex/texhat.tex", "r");
+    FILE* hat = fopen("latex/texhat.txt", "r");
     fread(buf, 1, fileinfo.st_size, hat);
 
     FILE* texfile = fopen(filename, "w");
@@ -85,7 +85,7 @@ static int latex_func (FILE* fp, tree_node_t* node)
 {
     int val;
     node_get_val(node, &val);
-    for (size_t i = 0; i < sizeof(FUNCS)/sizeof(FUNCS[0]); i++)
+    for (size_t i = 0; i < FUNCS_COUNT; i++)
     {
         if (val == FUNCS[i].arg_code)
         {

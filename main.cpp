@@ -56,13 +56,13 @@ int pr (FILE* fp, const void* ptr, int type)
     case VAR:
         return fprintf(fp, "%c", *((const int*)ptr));
     case OP:
-        for (size_t i = 0; i < sizeof(OPS)/sizeof(OPS[0]); i++)
+        for (size_t i = 0; i < OPS_COUNT; i++)
             if (OPS[i].arg_code == *((const int*)ptr))
                 return fprintf(fp, "%s", OPS[i].str);
         assert(0);
         break;
     case FUNC:
-        for (size_t i = 0; i < sizeof(FUNCS)/sizeof(FUNCS[0]); i++)
+        for (size_t i = 0; i < FUNCS_COUNT; i++)
             if (FUNCS[i].arg_code == *((const int*)ptr))
                 return fprintf(fp, "%s", FUNCS[i].str);
         assert(0);
@@ -103,7 +103,7 @@ tree_node_t* tree_from_file (FILE* fp)
 
     if (node == NULL)
     {
-        for (i = 0; i < sizeof(VARS)/sizeof(VARS[0]); i++)
+        for (i = 0; i < VARS_COUNT; i++)
         {
             if (strcmp(VARS[i].str, arg) == 0)
             {
@@ -116,7 +116,7 @@ tree_node_t* tree_from_file (FILE* fp)
 
     if (node == NULL)
     {
-        for (i = 0; i < sizeof(OPS)/sizeof(OPS[0]); i++)
+        for (i = 0; i < OPS_COUNT; i++)
         {
             if (strcmp(OPS[i].str, arg) == 0)
             {
@@ -128,7 +128,7 @@ tree_node_t* tree_from_file (FILE* fp)
     }
     if (node == NULL)
     {
-        for (i = 0; i < sizeof(FUNCS)/sizeof(FUNCS[0]); i++)
+        for (i = 0; i < FUNCS_COUNT; i++)
         {
             if (strcmp(FUNCS[i].str, arg) == 0)
             {
