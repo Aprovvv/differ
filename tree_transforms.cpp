@@ -23,6 +23,11 @@ void diff_and_tex (tree_node_t* root)
     tree_node_t* droot = diff(root);
     latex_tree(texfile, droot);
     fprintf(texfile, "$$\n");
+    fprintf(texfile, "Но мы ж не долбоебы, мы не будем в таком виде осталять\n");
+    fprintf(texfile, "$$f'(x) = ");
+    droot = simplify(droot);
+    latex_tree(texfile, droot);
+    fprintf(texfile, "$$\n");
 
     fprintf(texfile, "\\end{document}\n");
     fclose(texfile);
@@ -116,28 +121,47 @@ tree_node_t* diff_div (tree_node_t* f)
 tree_node_t* diff_pow (tree_node_t* f)
 //FIXME: общий случай
 {
-    if (LEFT_IS_VAR(f) && RIGHT_IS_NUM(f))
+    if (RIGHT_IS_NUM(f))
     {
         int mult = MULT, pw = POW;
         double old_pow = 0;
         node_get_val(node_to_right(f), &old_pow);
         double new_pow = old_pow - 1;
-
-        tree_node_t* base =
+        tree_node_t* result =
+            new_node(&pw, sizeof(pw), OP,
+                     branch_copy(node_to_left(f)),
+                     new_node(&new_pow, sizeof(new_pow), NUM, NULL, NULL));
+        result =
             new_node(&mult, sizeof(mult), OP,
-                    new_node(&old_pow, sizeof(old_pow), NUM, NULL, NULL),
-                    branch_copy(node_to_left(f)));
-        return new_node(&pw, sizeof(pw), OP,
-                        base,
-                        new_node(&new_pow, sizeof(new_pow), NUM, NULL, NULL));
+                     new_node(&old_pow, sizeof(old_pow), NUM, NULL, NULL),
+                     result);
+        return new_node(&mult, sizeof(mult), OP,
+                        result,
+                        diff(node_to_left(f)));
+    }
 
-    }
-    if (LEFT_IS_NUM(f) && RIGHT_IS_NUM(f))
-    {
-        double val = 0;
-        return new_node(&val, sizeof(val), NUM, NULL, NULL);
-    }
-    return NULL;
+    //общий случай:
+    //(f(x)^g(x))' = ( (g(x)/f(x)) * f'(x) + ln(f(x)) * g'(x) ) * f(x)^g(x)
+    //                      first_term            second_term       f
+    int div = DIV, mult = MULT, ln = LN, sum = ADD;
+    tree_node_t* first_term =
+        new_node(&mult, sizeof(mult), OP,
+                 new_node(&div, sizeof(div), OP,
+                          branch_copy(node_to_right(f)),
+                          branch_copy(node_to_left(f))),
+                 diff(node_to_left(f)));
+    tree_node_t* second_term =
+        new_node(&mult, sizeof(mult), OP,
+                 new_node(&ln, sizeof(ln), FUNC,
+                          NULL,
+                          branch_copy(node_to_left(f))),
+                 diff(node_to_right(f)));
+
+    return new_node(&mult, sizeof(mult), OP,
+                    new_node(&sum, sizeof(sum), OP,
+                             first_term,
+                             second_term),
+                    branch_copy(f));
 }
 
 tree_node_t* diff_sin (tree_node_t* f)

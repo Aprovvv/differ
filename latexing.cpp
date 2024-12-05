@@ -60,7 +60,16 @@ static int latex_num (FILE* fp, tree_node_t* node)
 {
     double val;
     node_get_val(node, &val);
-    smart_double_print(fp, val);
+    if (val >= 0)
+    {
+        smart_double_print(fp, val);
+    }
+    else
+    {
+        fprintf(fp, "(");
+        smart_double_print(fp, val);
+        fprintf(fp, ")");
+    }
     return 0;
 }
 
@@ -135,7 +144,7 @@ static int latex_op (FILE* fp, tree_node_t* node)
             latex_tree(fp, node_to_left(node));
         }
 
-        //if (RIGHT_IS_NUM(node))
+        if (!RIGHT_IS_VAR(node) || !LEFT_IS_NUM(node))
             fprintf(fp, "*");
 
         if (RIGHT_IS_OP(node))
