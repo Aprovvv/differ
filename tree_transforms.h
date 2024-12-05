@@ -42,7 +42,7 @@ enum ARG_TYPES {
     OP,
     FUNC
 };
-
+//TODO: PREFIX
 enum OP_CODES {
     ADD = 1,
     SUB,
@@ -60,6 +60,8 @@ enum FUNC_CODES {
     EXP,
     SQRT
 };
+
+//TODO: external
 
 const struct ARG VARS[] = {
     {"x", 'x', diff_var},
@@ -87,5 +89,6 @@ tree_node_t* diff (tree_node_t* f);
 tree_node_t* calc_node (tree_node_t* node);
 tree_node_t* simplify (tree_node_t* node);
 tree_node_t* delete_trivials (tree_node_t* node);
+void diff_and_tex (tree_node_t* root);
 
 #endif

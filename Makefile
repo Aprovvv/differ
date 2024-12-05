@@ -23,6 +23,14 @@ clean:
 	rm -rf debug_object_files/*.o
 	rm -rf release_object_files/*.o
 
+texclean:
+	rm -rf *.tex
+	rm -rf *.aux
+	rm -rf *.log
+	rm -rf latex/*.tex
+	rm -rf latex/*.aux
+	rm -rf latex/*.log
+
 release: $(SOURCES) $(REXECUTABLE)
 
 $(REXECUTABLE): $(ROBJECTS)

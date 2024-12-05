@@ -6,13 +6,32 @@
 #include <math.h>
 #include "tree/tree.h"
 #include "tree_transforms.h"
+#include "latexing.h"
 
 static int is_int(double x);
-static int nod (int a, int b);
+
+void diff_and_tex (tree_node_t* root)
+{
+    char* filename = "latex/file.tex";
+    FILE* texfile = create_texfile(filename);
+    fprintf(texfile, "Дана функция f(x):\n");
+    fprintf(texfile, "$$f(x) = ");
+    latex_tree(texfile, root);
+    fprintf(texfile, "$$\n");
+    fprintf(texfile, "Её производная f'(x):\n");
+    fprintf(texfile, "$$f'(x) = ");
+    tree_node_t* droot = diff(root);
+    latex_tree(texfile, droot);
+    fprintf(texfile, "$$\n");
+
+    fprintf(texfile, "\\end{document}\n");
+    fclose(texfile);
+    branch_delete(droot);
+    system("pdflatex -output-directory=latex/ latex/file.tex");
+}
 
 tree_node_t* diff (tree_node_t* f)
 {
-    tree_node_t* df = NULL;
     if (node_get_type(f) == NUM)
         return diff_num(f);
     if (node_get_type(f) == VAR)
@@ -21,7 +40,7 @@ tree_node_t* diff (tree_node_t* f)
     {
         int val = 0;
         node_get_val(f, &val);
-        for (int i = 0; i < sizeof(OPS)/sizeof(OPS[0]); i++)
+        for (size_t i = 0; i < sizeof(OPS)/sizeof(OPS[0]); i++)
             if (OPS[i].arg_code == val)
                 return OPS[i].diff_func(f);
 
@@ -32,7 +51,7 @@ tree_node_t* diff (tree_node_t* f)
     {
         int val = 0;
         node_get_val(f, &val);
-        for (int i = 0; i < sizeof(FUNCS)/sizeof(FUNCS[0]); i++)
+        for (size_t i = 0; i < sizeof(FUNCS)/sizeof(FUNCS[0]); i++)
             if (FUNCS[i].arg_code == val)
                 return FUNCS[i].diff_func(f);
 
@@ -118,6 +137,7 @@ tree_node_t* diff_pow (tree_node_t* f)
         double val = 0;
         return new_node(&val, sizeof(val), NUM, NULL, NULL);
     }
+    return NULL;
 }
 
 tree_node_t* diff_sin (tree_node_t* f)
@@ -314,7 +334,6 @@ tree_node_t* delete_trivials (tree_node_t* node)
 
 tree_node_t* calc_node (tree_node_t* node)
 {
-    int type = node_get_type(node);
     int val = 0;
     double val_left = 0, val_right = 0, result = 0;
 
@@ -371,18 +390,5 @@ static int is_int(double x)
     if (abs(modf(x, &temp)) < EPS)
         return 1;
     return 0;
-}
-
-static int nod (int a, int b)
-{
-    while(a > 0 && b > 0)
-
-        if(a > b)
-            a %= b;
-
-        else
-            b %= a;
-
-    return a + b;
 }
 

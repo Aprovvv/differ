@@ -8,6 +8,8 @@
 #include "tree_transforms.h"
 #include "latexing.h"
 
+//TODO: texlive
+
 int is_num (const char* str);
 char next_nonspace (FILE* fp);
 char getc_until (FILE* fp, const char* str);
@@ -36,6 +38,7 @@ int main()
     FILE* latex_droot = fopen("droot.txt", "w");
     latex_tree(latex_root, root);
     latex_tree(latex_droot, droot);
+    diff_and_tex(root);
     fclose(latex_root);
     fclose(latex_droot);
 
@@ -54,26 +57,14 @@ int pr (FILE* fp, const void* ptr, int type)
         return fprintf(fp, "%c", *((const int*)ptr));
     case OP:
         for (size_t i = 0; i < sizeof(OPS)/sizeof(OPS[0]); i++)
-        {
-            //fprintf(stderr, "OPS[i].arg_code = %d; *((const long*)ptr) = %d\n", OPS[i].arg_code, *((const long*)ptr));
             if (OPS[i].arg_code == *((const int*)ptr))
-            {
-                //fprintf(stderr, "in pr i = %d\n", i);
                 return fprintf(fp, "%s", OPS[i].str);
-            }
-        }
         assert(0);
         break;
     case FUNC:
         for (size_t i = 0; i < sizeof(FUNCS)/sizeof(FUNCS[0]); i++)
-        {
-            //fprintf(stderr, "OPS[i].arg_code = %d; *((const long*)ptr) = %d\n", OPS[i].arg_code, *((const long*)ptr));
             if (FUNCS[i].arg_code == *((const int*)ptr))
-            {
-                //fprintf(stderr, "in pr i = %d\n", i);
                 return fprintf(fp, "%s", FUNCS[i].str);
-            }
-        }
         assert(0);
         break;
     default:

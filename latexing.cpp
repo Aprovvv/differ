@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <assert.h>
 #include <math.h>
+#include <sys/stat.h>
 #include "tree/tree.h"
 #include "tree_transforms.h"
 #include "latexing.h"
@@ -14,6 +15,23 @@ static void smart_double_print(FILE* fp, double x);
 
 
 int pr (FILE* fp, const void* ptr, int type);
+
+FILE* create_texfile (char* filename)
+{
+    struct stat fileinfo = {};
+    stat("latex/texhat.tex", &fileinfo);
+    char* buf = (char*) calloc(1, fileinfo.st_size);
+
+    FILE* hat = fopen("latex/texhat.tex", "r");
+    fread(buf, 1, fileinfo.st_size, hat);
+
+    FILE* texfile = fopen(filename, "w");
+    fwrite(buf, 1, fileinfo.st_size, texfile);
+
+    fclose(hat);
+    free(buf);
+    return texfile;
+}
 
 int latex_tree (FILE* fp, tree_node_t* node)
 {
@@ -82,7 +100,7 @@ static int latex_func (FILE* fp, tree_node_t* node)
 
 static int latex_op (FILE* fp, tree_node_t* node)
 {
-    int val;
+    int val = 0;
     node_get_val(node, &val);
     switch (val)
     {
@@ -99,9 +117,9 @@ static int latex_op (FILE* fp, tree_node_t* node)
     case MULT:
         if (LEFT_IS_OP(node))
         {
-            int val = 0;
-            node_get_val(node_to_left(node), &val);
-            if (val == SUB || val == ADD)
+            int left_val = 0;
+            node_get_val(node_to_left(node), &left_val);
+            if (left_val == SUB || left_val == ADD)
             {
                 fprintf(fp, "(");
                 latex_tree(fp, node_to_left(node));
@@ -122,9 +140,9 @@ static int latex_op (FILE* fp, tree_node_t* node)
 
         if (RIGHT_IS_OP(node))
         {
-            int val = 0;
-            node_get_val(node_to_right(node), &val);
-            if (val == SUB || val == ADD)
+            int right_val = 0;
+            node_get_val(node_to_right(node), &right_val);
+            if (right_val == SUB || right_val == ADD)
             {
                 fprintf(fp, "(");
                 latex_tree(fp, node_to_right(node));

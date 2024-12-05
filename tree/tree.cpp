@@ -9,7 +9,7 @@
 
 struct tree_node_t
 {
-    long type;
+    int type;
     size_t val_size;
     tree_node_t* left;
     tree_node_t* right;
@@ -20,7 +20,7 @@ static void add_dot_node(FILE* fp, tree_node_t* node,
                          size_t code);
 int pr (FILE* fp, const void* ptr, int type);
 
-tree_node_t* new_node(void* val_ptr, size_t val_size, long type, tree_node_t* left, tree_node_t* right)
+tree_node_t* new_node(void* val_ptr, size_t val_size, int type, tree_node_t* left, tree_node_t* right)
 {
     size_t node_size = sizeof(long) + 2*sizeof(tree_node_t*) + sizeof(size_t) + val_size;
     tree_node_t* p = (tree_node_t*)calloc(node_size, 1);
@@ -40,12 +40,12 @@ size_t node_get_val_size(tree_node_t* node)
     return node->val_size;
 }
 
-long node_get_type(tree_node_t* node)
+int node_get_type(tree_node_t* node)
 {
     return node->type;
 }
 
-void node_set_type(tree_node_t* node, long type)
+void node_set_type(tree_node_t* node, int type)
 {
     node->type = type;
 }
