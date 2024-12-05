@@ -1,0 +1,43 @@
+\documentclass[a4paper,11pt]{article}
+%%% Работа с русским языком
+\usepackage{cmap}					% поиск в PDF
+\usepackage{mathtext} 				% русские буквы в фомулах
+\usepackage[T2A]{fontenc}			% кодировка
+\usepackage[utf8]{inputenc}			% кодировка исходного текста
+\usepackage{gensymb}                %это чтобы можно было писать \degree
+\usepackage[english,russian]{babel}	% локализация и переносы
+\usepackage{graphicx} %
+
+%размеры полей
+\usepackage[left=1.5cm,right=1cm, top=2cm,bottom=2cm,bindingoffset=0cm]{geometry}
+
+%%% Дополнительная работа с математикой
+\usepackage{amsfonts,amssymb,amsthm,mathtools} % AMS
+\usepackage{amsmath}
+\usepackage{icomma} % "Умная" запятая: $0,2$ --- число, $0, 2$ --- перечисление
+
+\usepackage{graphicx} % Вставка Картинок
+\usepackage{wrapfig}
+\usepackage{sidecap}
+\usepackage{tikz-cd}
+\usepackage{tkz-euclide}
+\usepackage{stackengine}
+
+% Фенси хэдер
+\usepackage{fancyhdr}
+\pagestyle{fancy}
+
+\setcounter{secnumdepth}{0} % Отмена нумерации section
+
+\begin{document}
+\begin{center}
+\huge{\bf Отчет о выполнении лабораторной работы кафедры высшей математики МФТИ (дада, такие есть)}
+
+\Large{Все вычисления выполнены исключительно вручную без использования каких-либо дополнительных вычислительных систем (встроенный в Знамку вольфрам не считается)}
+\end{center}
+\fancyhead[L]{Математический Анализ...}
+\fancyhead[R]{...или нет?}
+\renewcommand{\footrulewidth}{1pt}
+\renewcommand{\headrulewidth}{1pt}
+\fancyfoot[L]{Зачем ты сюда смотришь}
+\fancyfoot[R]{Иди ботай}

@@ -25,22 +25,7 @@ int main()
 
     tree_graph_dump(root, pr);
 
-    tree_node_t* droot = diff(root);
-    tree_graph_dump(droot, pr);
-
-    root = simplify(root);
-    tree_graph_dump(root, pr);
-
-    droot = simplify(droot);
-    tree_graph_dump(droot, pr);
-
-    FILE* latex_root = fopen("root.txt", "w");
-    FILE* latex_droot = fopen("droot.txt", "w");
-    latex_tree(latex_root, root);
-    latex_tree(latex_droot, droot);
-    diff_and_tex(root);
-    fclose(latex_root);
-    fclose(latex_droot);
+    tree_node_t* droot = diff_and_tex(root);
 
     branch_delete(root);
     branch_delete(droot);

@@ -15,7 +15,7 @@ const double EPS = 10e-6;
 struct ARG {
     const char* str;
     int arg_code;
-    tree_node_t* (*diff_func)(tree_node_t* f);
+    tree_node_t* (*diff_func)(FILE* fp, tree_node_t* f);
 };
 
 const size_t ARG_LEN = 32;
@@ -55,10 +55,10 @@ extern const size_t VARS_COUNT;
 extern const size_t OPS_COUNT;
 extern const size_t FUNCS_COUNT;
 
-tree_node_t* diff (tree_node_t* f);
+tree_node_t* diff (FILE* fp, tree_node_t* f);
 tree_node_t* calc_node (tree_node_t* node);
 tree_node_t* simplify (tree_node_t* node);
 tree_node_t* delete_trivials (tree_node_t* node);
-void diff_and_tex (tree_node_t* root);
+tree_node_t* diff_and_tex (FILE* fp, tree_node_t* root);
 
 #endif
