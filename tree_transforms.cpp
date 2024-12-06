@@ -57,11 +57,11 @@ tree_node_t* diff_and_tex (tree_node_t* root)
     if (!texfile)
         return NULL;
 
-    fprintf(texfile, "Дана функция f(x):\n");
+    fprintf(texfile, "\n\nДана функция f(x):\n");
     fprintf(texfile, "$$f(x) = ");
     latex_tree(texfile, root);
-    fprintf(texfile, "$$\n");
-    fprintf(texfile, "Найдем ее производную f'(x):\n");
+    fprintf(texfile, "$$\n\n");
+    fprintf(texfile, "Найдем ее производную f'(x):\n\n");
     tree_node_t* droot = diff(texfile, root);
     fprintf(texfile, "$$f'(x) = ");
     latex_tree(texfile, droot);
@@ -113,10 +113,10 @@ static tree_node_t* diff_num (FILE* fp, tree_node_t* f)
 {
     if (fp)
     {
-        fprintf(fp, "Производная от константы это, слава Знамке, ноль:\n");
+        fprintf(fp, "Производная от константы это, слава Знамке, ноль:\n\n");
         fprintf(fp, "$$(");
         latex_tree(fp, f);
-        fprintf(fp, ")' = 0$$\n");
+        fprintf(fp, ")' = 0$$\n\n");
     }
     double val = 0;
     return new_node(&val, sizeof(val), NUM, NULL, NULL);
@@ -126,10 +126,10 @@ static tree_node_t* diff_var (FILE* fp, tree_node_t* f)
 {
     if (fp)
     {
-        fprintf(fp, "Производная от х это, хвала Петровичу, единица:\n");
+        fprintf(fp, "Производная от х это, хвала Петровичу, единица:\n\n");
         fprintf(fp, "$$(");
         latex_tree(fp, f);
-        fprintf(fp, ")' = 1$$\n");
+        fprintf(fp, ")' = 1$$\n\n");
     }
     double val = 1;
     return new_node(&val, sizeof(val), NUM, NULL, NULL);
@@ -139,14 +139,14 @@ static tree_node_t* diff_add_sub (FILE* fp, tree_node_t* f)
 {
     if (fp)
     {
-        fprintf(fp, "Производная от суммы есть сумма производных (эх, всгда бы так...):\n");
+        fprintf(fp, "Производная от суммы есть сумма производных (эх, всегда бы так...):\n\n");
         fprintf(fp, "$$(");
         latex_tree(fp, f);
         fprintf(fp, ")' = (");
         latex_tree(fp, node_to_left(f));
         fprintf(fp, ")' + (");
         latex_tree(fp, node_to_right(f));
-        fprintf(fp, ")'$$\n");
+        fprintf(fp, ")'$$\n\n");
     }
     int val = 0;
     node_get_val(f, &val);
@@ -158,7 +158,7 @@ static tree_node_t* diff_mult (FILE* fp, tree_node_t* f)
 {
     if (fp)
     {
-        fprintf(fp, "Производная произведения это вооть такая штука:\n");
+        fprintf(fp, "Производная произведения это вооть такая штука:\n\n");
         fprintf(fp, "$$(");
         latex_tree(fp, f);
         fprintf(fp, ")' = (");
@@ -169,7 +169,7 @@ static tree_node_t* diff_mult (FILE* fp, tree_node_t* f)
         latex_tree(fp, node_to_right(f));
         fprintf(fp, ")'*(");
         latex_tree(fp, node_to_left(f));
-        fprintf(fp, ")$$\n");
+        fprintf(fp, ")$$\n\n");
     }
     int op = MULT;
     tree_node_t* left_mult =
@@ -187,7 +187,7 @@ static tree_node_t* diff_div (FILE* fp, tree_node_t* f)
 {
     if (fp)
     {
-        fprintf(fp, "Производная от отношения есть... эээ.. ну короче ща все сами увидите:\n");
+        fprintf(fp, "Производная от отношения есть... эээ.. ну короче ща все сами увидите:\n\n");
         fprintf(fp, "$$(");
         latex_tree(fp, f);
         fprintf(fp, ")' = \\frac{(");
@@ -200,7 +200,7 @@ static tree_node_t* diff_div (FILE* fp, tree_node_t* f)
         latex_tree(fp, node_to_left(f));
         fprintf(fp, ")}{(");
         latex_tree(fp, node_to_right(f));
-        fprintf(fp, ")^2}$$\n");
+        fprintf(fp, ")^2}$$\n\n");
     }
     int mult = MULT, sub = SUB, div = DIV, pw = POW;
     double two = 2;
@@ -231,7 +231,7 @@ static tree_node_t* diff_pow (FILE* fp, tree_node_t* f)
         if (fp)
         {
             fprintf(fp, "Ну слава кпсс. Степенная функция. Тут все понятно. "
-                        "Главное не забыть домножить на производную того, что в скобках\n");
+                        "Главное не забыть домножить на производную того, что в скобках\n\n");
             fprintf(fp, "$$(");
             latex_tree(fp, f);
             fprintf(fp, ")' = ");
@@ -242,7 +242,7 @@ static tree_node_t* diff_pow (FILE* fp, tree_node_t* f)
             smart_double_print(fp, new_pow);
             fprintf(fp, "*(");
             latex_tree(fp, node_to_left(f));
-            fprintf(fp, ")'$$\n");
+            fprintf(fp, ")'$$\n\n");
         }
 
         tree_node_t* result =
@@ -261,6 +261,26 @@ static tree_node_t* diff_pow (FILE* fp, tree_node_t* f)
     //общий случай:
     //(f(x)^g(x))' = ( (g(x)/f(x)) * f'(x) + ln(f(x)) * g'(x) ) * f(x)^g(x)
     //                      first_term            second_term       f
+    if (fp)
+    {
+        fprintf(fp, "Хотели степенную функцию? Пососите! Так как и основание и показатель - "
+                    "функции, придется все делать по-честному:\n\n");
+        fprintf(fp, "$$(");
+        latex_tree(fp, f);
+        fprintf(fp, ")' = (\\frac{");
+        latex_tree(fp, node_to_right(f));
+        fprintf(fp, "}{");
+        latex_tree(fp, node_to_left(f));
+        fprintf(fp, "}*(");
+        latex_tree(fp, node_to_left(f));
+        fprintf(fp, ")'+\\ln{(");
+        latex_tree(fp, node_to_left(f));
+        fprintf(fp, ")}*(");
+        latex_tree(fp, node_to_right(f));
+        fprintf(fp, ")')*(");
+        latex_tree(fp, f);
+        fprintf(fp, ")'$$\n\n");
+    }
     int div = DIV, mult = MULT, ln = LN, sum = ADD;
     tree_node_t* first_term =
         new_node(&mult, sizeof(mult), OP,
@@ -285,7 +305,18 @@ static tree_node_t* diff_pow (FILE* fp, tree_node_t* f)
 static tree_node_t* diff_sin (FILE* fp, tree_node_t* f)
 {
     int cos = COS, mult = MULT;
-
+    if (fp)
+    {
+        fprintf(fp, "Производная синуса это косинус. Главное - не забыть "
+                     "про производную того, что в скобках\n\n");
+        fprintf(fp, "$$(");
+        latex_tree(fp, f);
+        fprintf(fp, ")' = \\cos{(");
+        latex_tree(fp, node_to_right(f));
+        fprintf(fp, ")}*(");
+        latex_tree(fp, node_to_right(f));
+        fprintf(fp, ")'$$\n\n");
+    }
     tree_node_t* cos_node =
         new_node(&cos, sizeof(cos), FUNC,
                     NULL, branch_copy(node_to_right(f)));
@@ -297,6 +328,19 @@ static tree_node_t* diff_cos (FILE* fp, tree_node_t* f)
 {
     int sin = SIN, mult = MULT;
     double m_1 = -1;
+
+    if (fp)
+    {
+        fprintf(fp, "Производная косинуса это минус синус. Главное - не забыть "
+                     "про производную того, что в скобках\n\n");
+        fprintf(fp, "$$(");
+        latex_tree(fp, f);
+        fprintf(fp, ")' = -\\sin{(");
+        latex_tree(fp, node_to_right(f));
+        fprintf(fp, ")}*(");
+        latex_tree(fp, node_to_right(f));
+        fprintf(fp, ")'$$\n\n");
+    }
 
     tree_node_t* minus_1 =
         new_node(&m_1, sizeof(m_1), NUM,
@@ -312,6 +356,18 @@ static tree_node_t* diff_cos (FILE* fp, tree_node_t* f)
 
 static tree_node_t* diff_tg (FILE* fp, tree_node_t* f)
 {
+    if (fp)
+    {
+        fprintf(fp, "Производная тангенса - $\\frac{1}{\\cos^2}$."
+                    "Доказательство предоставляется читателю в качестве несложного упражения.\n\n");
+        fprintf(fp, "$$(");
+        latex_tree(fp, f);
+        fprintf(fp, ")' = \\frac{1}{\\cos^2{(");
+        latex_tree(fp, node_to_right(f));
+        fprintf(fp, ")}}*(");
+        latex_tree(fp, node_to_right(f));
+        fprintf(fp, ")'$$\n\n");
+    }
     int div = DIV, pw = POW, cos = COS;
     double two = 2;
     return new_node(&div, sizeof(div), OP,
@@ -327,6 +383,18 @@ static tree_node_t* diff_tg (FILE* fp, tree_node_t* f)
 static tree_node_t* diff_ctg (FILE* fp, tree_node_t* f)
 {
     int div = DIV, pw = POW, sin = SIN, mult = MULT;
+    if (fp)
+    {
+        fprintf(fp, "Производная тангенса - $-\\frac{1}{\\sin^2}$."
+                    "Доказательство предоставляется читателю в качестве несложного упражения.\n\n");
+        fprintf(fp, "$$(");
+        latex_tree(fp, f);
+        fprintf(fp, ")' = -\\frac{1}{\\sin^2{(");
+        latex_tree(fp, node_to_right(f));
+        fprintf(fp, ")}}*(");
+        latex_tree(fp, node_to_right(f));
+        fprintf(fp, ")'$$\n\n");
+    }
     double two = 2, minus_1 = -1;
     return new_node(&div, sizeof(div), OP,
                     new_node(&mult, sizeof(mult), OP,
@@ -342,6 +410,17 @@ static tree_node_t* diff_ctg (FILE* fp, tree_node_t* f)
 
 static tree_node_t* diff_ln (FILE* fp, tree_node_t* f)
 {
+    if (fp)
+    {
+        fprintf(fp, "Я люблю производную логарифма!\n\n");
+        fprintf(fp, "$$(");
+        latex_tree(fp, f);
+        fprintf(fp, ")' = -\\frac{(");
+        latex_tree(fp, node_to_right(f));
+        fprintf(fp, ")'}{");
+        latex_tree(fp, node_to_right(f));
+        fprintf(fp, "}$$\n\n");
+    }
     int div = DIV;
     return new_node(&div, sizeof(div), OP,
                     diff(fp, node_to_right(f)),
@@ -350,6 +429,17 @@ static tree_node_t* diff_ln (FILE* fp, tree_node_t* f)
 
 static tree_node_t* diff_exp (FILE* fp, tree_node_t* f)
 {
+    if (fp)
+    {
+        fprintf(fp, "Экспонента. Самая приятная производная:)\n\n");
+        fprintf(fp, "$$(");
+        latex_tree(fp, f);
+        fprintf(fp, ")' = (");
+        latex_tree(fp, node_to_right(f));
+        fprintf(fp, ")'*");
+        latex_tree(fp, f);
+        fprintf(fp, "$$\n\n");
+    }
     int mult = MULT;
     return new_node(&mult, sizeof(mult), OP,
                     diff(fp, node_to_right(f)),
@@ -358,6 +448,18 @@ static tree_node_t* diff_exp (FILE* fp, tree_node_t* f)
 
 static tree_node_t* diff_sqrt (FILE* fp, tree_node_t* f)
 {
+    if (fp)
+    {
+        fprintf(fp, "Возьмем производную квадратного корня (простите, "
+                    "у меня закончилась фантазия на \"смешные\" фразочки):\n\n");
+        fprintf(fp, "$$(");
+        latex_tree(fp, f);
+        fprintf(fp, ")' = \\frac{(");
+        latex_tree(fp, node_to_right(f));
+        fprintf(fp, ")'}{2*");
+        latex_tree(fp, f);
+        fprintf(fp, "}$$\n\n");
+    }
     int div = DIV, mult = MULT;
     double two = 2;
     return new_node(&div, sizeof(div), OP,
@@ -533,4 +635,3 @@ static int is_int(double x)
         return 1;
     return 0;
 }
-
