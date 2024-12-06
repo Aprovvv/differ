@@ -49,10 +49,11 @@ extern const size_t OPS_COUNT = sizeof(OPS)/sizeof(OPS[0]);
 extern const size_t FUNCS_COUNT = sizeof(FUNCS)/sizeof(FUNCS[0]);
 
 static int is_int(double x);
+static int dblcmp (double a, double b);
 
 tree_node_t* diff_and_tex (tree_node_t* root)
 {
-    char* filename = "latex/file.tex";
+    const char* filename = "latex/file.tex";
     FILE* texfile = create_texfile(filename);
     if (!texfile)
         return NULL;
@@ -65,12 +66,12 @@ tree_node_t* diff_and_tex (tree_node_t* root)
     tree_node_t* droot = diff(texfile, root);
     fprintf(texfile, "$$f'(x) = ");
     latex_tree(texfile, droot);
-    fprintf(texfile, "$$\n");
-    fprintf(texfile, "Но мы ж не долбоебы, мы не будем в таком виде осталять\n");
+    fprintf(texfile, "$$\n\n");
+    fprintf(texfile, "Ну и если чуть-чуть упростить:\n\n");
     fprintf(texfile, "$$f'(x) = ");
     droot = simplify(droot);
     latex_tree(texfile, droot);
-    fprintf(texfile, "$$\n");
+    fprintf(texfile, "$$\n\n");
 
     fprintf(texfile, "\\end{document}\n");
     fclose(texfile);
@@ -139,7 +140,8 @@ static tree_node_t* diff_add_sub (FILE* fp, tree_node_t* f)
 {
     if (fp)
     {
-        fprintf(fp, "Производная от суммы есть сумма производных (эх, всегда бы так...):\n\n");
+        fprintf(fp, "Производная от суммы есть сумма производных "
+                    "(эх, всегда бы так...):\n\n");
         fprintf(fp, "$$(");
         latex_tree(fp, f);
         fprintf(fp, ")' = (");
@@ -187,7 +189,8 @@ static tree_node_t* diff_div (FILE* fp, tree_node_t* f)
 {
     if (fp)
     {
-        fprintf(fp, "Производная от отношения есть... эээ.. ну короче ща все сами увидите:\n\n");
+        fprintf(fp, "Производная от отношения есть... эээ.. "
+                    "ну короче ща все сами увидите:\n\n");
         fprintf(fp, "$$(");
         latex_tree(fp, f);
         fprintf(fp, ")' = \\frac{(");
@@ -207,9 +210,11 @@ static tree_node_t* diff_div (FILE* fp, tree_node_t* f)
     tree_node_t* numer =
         new_node(&sub, sizeof(sub), OP,
                     new_node(&mult, sizeof(mult), OP,
-                            diff(fp, node_to_left(f)), branch_copy(node_to_right(f))),
+                             diff(fp, node_to_left(f)),
+                             branch_copy(node_to_right(f))),
                     new_node(&mult, sizeof(mult), OP,
-                            branch_copy(node_to_left(f)), diff(fp, node_to_right(f))));
+                             branch_copy(node_to_left(f)),
+                             diff(fp, node_to_right(f))));
     tree_node_t* denumer =
         new_node(&pw, sizeof(pw), OP,
                     branch_copy(node_to_right(f)),
@@ -231,7 +236,8 @@ static tree_node_t* diff_pow (FILE* fp, tree_node_t* f)
         if (fp)
         {
             fprintf(fp, "Ну слава кпсс. Степенная функция. Тут все понятно. "
-                        "Главное не забыть домножить на производную того, что в скобках\n\n");
+                        "Главное - не забыть домножить на производную "
+                        "того, что в скобках\n\n");
             fprintf(fp, "$$(");
             latex_tree(fp, f);
             fprintf(fp, ")' = ");
@@ -263,8 +269,9 @@ static tree_node_t* diff_pow (FILE* fp, tree_node_t* f)
     //                      first_term            second_term       f
     if (fp)
     {
-        fprintf(fp, "Хотели степенную функцию? Пососите! Так как и основание и показатель - "
-                    "функции, придется все делать по-честному:\n\n");
+        fprintf(fp, "Хотели степенную функцию? Пососите! "
+                    "Так как и основание и показатель - функции, "
+                    "придется все делать по-честному:\n\n");
         fprintf(fp, "$$(");
         latex_tree(fp, f);
         fprintf(fp, ")' = (\\frac{");
@@ -331,8 +338,8 @@ static tree_node_t* diff_cos (FILE* fp, tree_node_t* f)
 
     if (fp)
     {
-        fprintf(fp, "Производная косинуса это минус синус. Главное - не забыть "
-                     "про производную того, что в скобках\n\n");
+        fprintf(fp, "Производная косинуса это минус синус. Главное - "
+                    "не забыть про производную того, что в скобках\n\n");
         fprintf(fp, "$$(");
         latex_tree(fp, f);
         fprintf(fp, ")' = -\\sin{(");
@@ -359,7 +366,8 @@ static tree_node_t* diff_tg (FILE* fp, tree_node_t* f)
     if (fp)
     {
         fprintf(fp, "Производная тангенса - $\\frac{1}{\\cos^2}$."
-                    "Доказательство предоставляется читателю в качестве несложного упражения.\n\n");
+                    "Доказательство предоставляется читателю "
+                    "в качестве несложного упражения.\n\n");
         fprintf(fp, "$$(");
         latex_tree(fp, f);
         fprintf(fp, ")' = \\frac{1}{\\cos^2{(");
@@ -386,7 +394,8 @@ static tree_node_t* diff_ctg (FILE* fp, tree_node_t* f)
     if (fp)
     {
         fprintf(fp, "Производная тангенса - $-\\frac{1}{\\sin^2}$."
-                    "Доказательство предоставляется читателю в качестве несложного упражения.\n\n");
+                    "Доказательство предоставляется читателю "
+                    "в качестве несложного упражения.\n\n");
         fprintf(fp, "$$(");
         latex_tree(fp, f);
         fprintf(fp, ")' = -\\frac{1}{\\sin^2{(");
@@ -398,13 +407,17 @@ static tree_node_t* diff_ctg (FILE* fp, tree_node_t* f)
     double two = 2, minus_1 = -1;
     return new_node(&div, sizeof(div), OP,
                     new_node(&mult, sizeof(mult), OP,
-                             new_node(&minus_1, sizeof(minus_1), NUM, NULL, NULL),
+                             new_node(&minus_1, sizeof(minus_1), NUM,
+                                      NULL,
+                                      NULL),
                              diff(fp, node_to_right(f))),
                     new_node(&pw, sizeof(pw), OP,
                              new_node(&sin, sizeof(sin), FUNC,
-                                      NULL, branch_copy(node_to_right(f))),
+                                      NULL,
+                                      branch_copy(node_to_right(f))),
                              new_node(&two, sizeof(two), NUM,
-                                      NULL, NULL)));
+                                      NULL,
+                                      NULL)));
 
 }
 
@@ -450,8 +463,8 @@ static tree_node_t* diff_sqrt (FILE* fp, tree_node_t* f)
 {
     if (fp)
     {
-        fprintf(fp, "Возьмем производную квадратного корня (простите, "
-                    "у меня закончилась фантазия на \"смешные\" фразочки):\n\n");
+        fprintf(fp, "Возьмем производную квадратного корня (простите, у меня 0"
+                    "закончилась фантазия на \"смешные\" фразочки):\n\n");
         fprintf(fp, "$$(");
         latex_tree(fp, f);
         fprintf(fp, ")' = \\frac{(");
@@ -480,19 +493,17 @@ tree_node_t* simplify (tree_node_t* node)
         node_add_right(node, simplify(node_to_right(node)));
 
 
-    if (node_get_type(result) == OP && LEFT_IS_NUM(result) && RIGHT_IS_NUM(result))
+    if (node_get_type(result) == OP &&
+        LEFT_IS_NUM(result) && RIGHT_IS_NUM(result))
     {
-        //fprintf(stderr, "calcing node %p\n", node);
         result = calc_node(result);
     }
 
-    if (node_get_type(result) == OP && (LEFT_IS_NUM(result) || RIGHT_IS_NUM(result)))
+    if (node_get_type(result) == OP &&
+        (LEFT_IS_NUM(result) || RIGHT_IS_NUM(result)))
     {
-        //fprintf(stderr, "deleting node %p, \n", node);
         result = delete_trivials(result);
     }
-
-    //tree_graph_dump(node, pr);
 
     return result;
 }
@@ -514,14 +525,14 @@ tree_node_t* delete_trivials (tree_node_t* node)
     case ADD:
     //TODO: здесь копируется и возвращается вся ненулевая ветка.
     //было бы лучше удалить всего два узла, но нет нужной функции
-        if (val_left == 0)
+        if (dblcmp(val_left, 0) == 0)
         {
             result = branch_copy(node_to_right(node));
             branch_delete(node);
             return result;
         }
     case SUB:
-        if (val_right == 0)
+        if (dblcmp(val_right, 0) == 0)
         {
             result = branch_copy(node_to_left(node));
             branch_delete(node);
@@ -529,27 +540,26 @@ tree_node_t* delete_trivials (tree_node_t* node)
         }
         break;
     case MULT:
-        if (val_right == 0)
+        if (dblcmp(val_right, 0) == 0)
         {
             double zero = 0;
             branch_delete(node);
-            //fprintf(stderr, "ASD;LFKJAKLW; NHGASDFKJ\n");
             return new_node(&zero, sizeof(zero), NUM, NULL, NULL);
         }
-        if (val_left == 1)
+        if (dblcmp(val_left, 1) == 0)
         {
             result = branch_copy(node_to_right(node));
             branch_delete(node);
             return result;
         }
     case DIV:
-        if (val_left == 0)
+        if (dblcmp(val_left, 0) == 0)
         {
             double zero = 0;
             branch_delete(node);
             return new_node(&zero, sizeof(zero), NUM, NULL, NULL);
         }
-        if (val_right == 1)
+        if (dblcmp(val_right, 1) == 0)
         {
             result = branch_copy(node_to_left(node));
             branch_delete(node);
@@ -557,13 +567,13 @@ tree_node_t* delete_trivials (tree_node_t* node)
         }
         break;
     case POW:
-        if (val_right == 1)
+        if (dblcmp(val_right, 1) == 0)
         {
             result = branch_copy(node_to_left(node));
             branch_delete(node);
             return result;
         }
-        if (val_right == 0)
+        if (dblcmp(val_right, 0) == 0)
         {
             double one = 1;
             branch_delete(node);
@@ -584,8 +594,6 @@ tree_node_t* calc_node (tree_node_t* node)
     node_get_val(node, &val);
     node_get_val(node_to_left(node), &val_left);
     node_get_val(node_to_right(node), &val_right);
-    //fprintf(stderr, "&node = %p; type = %d; left %f; right %f\n", node, node_get_type(node), val_left, val_right);
-    //fprintf(stderr, "is_int = %d\n", is_int(val_left));
 
     if (val == POW)
         if (!is_int(val_right))
@@ -628,10 +636,19 @@ tree_node_t* calc_node (tree_node_t* node)
     return new_node(&result, sizeof(result), NUM, NULL, NULL);
 }
 
-static int is_int(double x)
+static int is_int (double x)
 {
     double temp = 0;
     if (abs(modf(x, &temp)) < EPS)
         return 1;
+    return 0;
+}
+
+static int dblcmp (double a, double b)
+{
+    if (a - b > EPS)
+        return 1;
+    if (b - a > EPS)
+        return -1;
     return 0;
 }

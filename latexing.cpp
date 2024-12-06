@@ -22,12 +22,12 @@ FILE* create_texfile (const char* filename)
     if (!hat)
         return NULL;
     stat("latex/texhat.txt", &fileinfo);
-    char* buf = (char*) calloc(1, fileinfo.st_size);
+    char* buf = (char*) calloc(1, (size_t)fileinfo.st_size);
 
-    fread(buf, 1, fileinfo.st_size, hat);
+    fread(buf, 1, (size_t)fileinfo.st_size, hat);
 
     FILE* texfile = fopen(filename, "w");
-    fwrite(buf, 1, fileinfo.st_size, texfile);
+    fwrite(buf, 1, (size_t)fileinfo.st_size, texfile);
 
     fclose(hat);
     free(buf);
@@ -212,6 +212,7 @@ void smart_double_print(FILE* fp, double x)
             if ((int)(frac_part*i)%10 > 0)
                 sign_count++;
 
-        fprintf(fp, ".%*d", sign_count, (int)(frac_part*pow(10, sign_count)));
+        fprintf(fp, ".%*d", sign_count,
+                (int)(frac_part*pow(10, sign_count)));
     }
 }

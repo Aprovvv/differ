@@ -18,11 +18,17 @@ struct tree_node_t
 static void add_dot_node(FILE* fp, tree_node_t* node,
                          int(*print_func)(FILE* fp, const void* ptr, int type),
                          size_t code);
-int pr (FILE* fp, const void* ptr, int type);
 
-tree_node_t* new_node(void* val_ptr, size_t val_size, int type, tree_node_t* left, tree_node_t* right)
+tree_node_t* new_node(void* val_ptr,
+                      size_t val_size,
+                      int type,
+                      tree_node_t* left, tree_node_t* right)
 {
-    size_t node_size = sizeof(long) + 2*sizeof(tree_node_t*) + sizeof(size_t) + val_size;
+    size_t node_size =
+        sizeof(long) +
+        2*sizeof(tree_node_t*) +
+        sizeof(size_t) +
+        val_size;
     tree_node_t* p = (tree_node_t*)calloc(node_size, 1);
     if (p)
     {
@@ -82,9 +88,12 @@ tree_node_t* node_add_right(tree_node_t* node, tree_node_t* next_node)
 
 tree_node_t* branch_copy(tree_node_t* node)
 {
-    tree_node_t* new_left = node->left == NULL ? NULL : branch_copy(node->left);
-    tree_node_t* new_right = node->right == NULL ? NULL : branch_copy(node->right);
-    return new_node(NODE_VAL_P(node), node->val_size, node->type, new_left, new_right);
+    tree_node_t* new_left =
+        node->left == NULL ? NULL : branch_copy(node->left);
+    tree_node_t* new_right =
+        node->right == NULL ? NULL : branch_copy(node->right);
+    return new_node(NODE_VAL_P(node), node->val_size, node->type,
+                    new_left, new_right);
 }
 
 void branch_delete(tree_node_t* node)
@@ -97,7 +106,8 @@ void branch_delete(tree_node_t* node)
     free(node);
 }
 
-void tree_print(FILE* fp, tree_node_t* node, int(*print_func)(FILE* fp, const void*, int type))
+void tree_print(FILE* fp, tree_node_t* node,
+                int(*print_func)(FILE* fp, const void*, int type))
 {
     if (node == NULL)
         return;
@@ -110,7 +120,8 @@ void tree_print(FILE* fp, tree_node_t* node, int(*print_func)(FILE* fp, const vo
     fprintf(fp, ")");
 }
 
-void tree_graph_dump(tree_node_t* node, int(*print_func)(FILE* fp, const void*, int type))
+void tree_graph_dump(tree_node_t* node,
+                     int(*print_func)(FILE* fp, const void*, int type))
 {
     static int numb = 0;
     numb++;
