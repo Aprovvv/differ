@@ -8,8 +8,6 @@
 #include "tree_transforms.h"
 #include "latexing.h"
 
-//TODO: texlive
-
 int is_num (const char* str);
 char next_nonspace (FILE* fp);
 char getc_until (FILE* fp, const char* str);
@@ -61,7 +59,6 @@ int pr (FILE* fp, const void* ptr, int type)
 tree_node_t* tree_from_file (FILE* fp)
 {
     char ch = getc(fp);
-    //fprintf(stderr, "start ch = %c\n", ch);
     tree_node_t* node_temp_ptr = NULL;
     tree_node_t* node = NULL;
     if (ch == '(')
@@ -129,7 +126,6 @@ tree_node_t* tree_from_file (FILE* fp)
         node_add_right(node, node_temp_ptr);
         getc(fp);
     }
-    //fprintf(stderr, "arg = %s; ch = %c\n", arg, ch);
     return node;
 }
 
