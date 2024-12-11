@@ -132,12 +132,22 @@ tree_node_t* tree_from_file (FILE* fp)
 int is_num (const char* str)
 {
     int i = 0;
+    int is_minus = 0;
     while(str[i] != 0)
     {
-        if (!isdigit(str[i]) && str[i] != '.')
-            return 0;
-        i++;
+        if (isdigit(str[i]) || str[i] == '.')
+            i++;
+        else
+            if (str[i] == '-' && i == 0)
+            {
+                i++;
+                is_minus = 1;
+            }
+            else
+                return 0;
     }
+    if (i == 1 && is_minus)
+        return 0;
     return 1;
 }
 
