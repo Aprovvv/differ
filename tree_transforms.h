@@ -1,5 +1,6 @@
 #ifndef TREE_TRANSORMS_H
 #define TREE_TRANSORMS_H
+#include "tree/tree.h"
 
 #define LEFT_IS_NUM(x)   (node_to_left(x)  && node_get_type(node_to_left(x))  == NUM)
 #define RIGHT_IS_NUM(x)  (node_to_right(x) && node_get_type(node_to_right(x)) == NUM)
@@ -32,7 +33,10 @@ enum OP_CODE {
     SUB,
     MULT,
     DIV,
-    POW
+    POW,
+    LBRACKET,
+    RBRACKET,
+    DOLLAR
 };
 
 enum FUNC_CODE {

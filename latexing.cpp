@@ -76,7 +76,7 @@ static int latex_num (FILE* fp, tree_node_t* node)
 
 static int latex_var (FILE* fp, tree_node_t* node)
 {
-    int val;
+    long val;
     node_get_val(node, &val);
     fprintf(fp, "%c", val);
     return 0;
@@ -84,7 +84,7 @@ static int latex_var (FILE* fp, tree_node_t* node)
 
 static int latex_func (FILE* fp, tree_node_t* node)
 {
-    int val;
+    long val;
     node_get_val(node, &val);
     for (size_t i = 0; i < FUNCS_COUNT; i++)
     {
@@ -110,7 +110,7 @@ static int latex_func (FILE* fp, tree_node_t* node)
 
 static int latex_op (FILE* fp, tree_node_t* node)
 {
-    int val = 0;
+    long val = 0;
     node_get_val(node, &val);
     switch (val)
     {
@@ -127,7 +127,7 @@ static int latex_op (FILE* fp, tree_node_t* node)
     case MULT:
         if (LEFT_IS_OP(node))
         {
-            int left_val = 0;
+            long left_val = 0;
             node_get_val(node_to_left(node), &left_val);
             if (left_val == SUB || left_val == ADD)
             {
@@ -150,7 +150,7 @@ static int latex_op (FILE* fp, tree_node_t* node)
 
         if (RIGHT_IS_OP(node))
         {
-            int right_val = 0;
+            long right_val = 0;
             node_get_val(node_to_right(node), &right_val);
             if (right_val == SUB || right_val == ADD)
             {

@@ -7,6 +7,8 @@
 #include "tree/tree.h"
 #include "tree_transforms.h"
 #include "latexing.h"
+#include "lexer.h"
+#include "recursive_reader.h"
 
 int is_num (const char* str);
 char next_nonspace (FILE* fp);
@@ -16,7 +18,14 @@ int pr (FILE* fp, const void* ptr, int type);
 
 int main()
 {
-    FILE* input = fopen("txt.txt", "r");
+    lexarr lexem_array = init_lexem_array("eq.txt");
+    tree_graph_dump((tree_node_t*)lexem_array.ptr, pr);
+    tree_node_t* root = get_grammar((tree_node_t*)lexem_array.ptr);
+    tree_graph_dump(root, pr);
+    branch_delete(root);
+    free(lexem_array.ptr);
+
+    /*FILE* input = fopen("txt.txt", "r");
     tree_node_t* root = tree_from_file(input);
     if (root == NULL)
         return EXIT_FAILURE;
@@ -27,7 +36,7 @@ int main()
 
     branch_delete(root);
     branch_delete(droot);
-    fclose(input);
+    fclose(input);*/
 }
 
 int pr (FILE* fp, const void* ptr, int type)
@@ -37,16 +46,17 @@ int pr (FILE* fp, const void* ptr, int type)
     case NUM:
         return fprintf(fp, "%f", (*(double*)ptr));
     case VAR:
-        return fprintf(fp, "%c", *((const int*)ptr));
+        return fprintf(fp, "%c", *((const long*)ptr));
     case OP:
         for (size_t i = 0; i < OPS_COUNT; i++)
-            if (OPS[i].arg_code == *((const int*)ptr))
+            if (OPS[i].arg_code == *((const long*)ptr))
                 return fprintf(fp, "%s", OPS[i].str);
+        fprintf(stderr, "%p\n", ptr);
         assert(0);
         break;
     case FUNC:
         for (size_t i = 0; i < FUNCS_COUNT; i++)
-            if (FUNCS[i].arg_code == *((const int*)ptr))
+            if (FUNCS[i].arg_code == *((const long*)ptr))
                 return fprintf(fp, "%s", FUNCS[i].str);
         assert(0);
         break;
@@ -89,7 +99,7 @@ tree_node_t* tree_from_file (FILE* fp)
         {
             if (strcmp(VARS[i].str, arg) == 0)
             {
-                int code = VARS[i].arg_code;
+                long code = VARS[i].arg_code;
                 node = new_node(&code, sizeof(code), VAR, node_temp_ptr, NULL);
                 break;
             }
@@ -102,7 +112,7 @@ tree_node_t* tree_from_file (FILE* fp)
         {
             if (strcmp(OPS[i].str, arg) == 0)
             {
-                int code = OPS[i].arg_code;
+                long code = OPS[i].arg_code;
                 node = new_node(&code, sizeof(code), OP, node_temp_ptr, NULL);
                 break;
             }
@@ -114,7 +124,7 @@ tree_node_t* tree_from_file (FILE* fp)
         {
             if (strcmp(FUNCS[i].str, arg) == 0)
             {
-                int code = FUNCS[i].arg_code;
+                long code = FUNCS[i].arg_code;
                 node = new_node(&code, sizeof(code), FUNC, node_temp_ptr, NULL);
                 break;
             }

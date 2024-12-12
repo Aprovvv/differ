@@ -31,7 +31,10 @@ extern const struct ARG OPS[] = {
     {"-", SUB, diff_add_sub},
     {"*", MULT, diff_mult},
     {"/", DIV, diff_div},
-    {"^", POW, diff_pow}
+    {"^", POW, diff_pow},
+    {"(", LBRACKET, NULL},
+    {")", RBRACKET, NULL},
+    {"$", DOLLAR, NULL}
 };
 
 extern const struct ARG FUNCS[] = {
@@ -88,7 +91,7 @@ tree_node_t* diff (FILE* fp, tree_node_t* f)
         return diff_var(fp, f);
     if (node_get_type(f) == OP)
     {
-        int val = 0;
+        long val = 0;
         node_get_val(f, &val);
         for (size_t i = 0; i < sizeof(OPS)/sizeof(OPS[0]); i++)
             if (OPS[i].arg_code == val)
@@ -99,7 +102,7 @@ tree_node_t* diff (FILE* fp, tree_node_t* f)
     //TODO: остальные функции
     if (node_get_type(f) == FUNC)
     {
-        int val = 0;
+        long val = 0;
         node_get_val(f, &val);
         for (size_t i = 0; i < sizeof(FUNCS)/sizeof(FUNCS[0]); i++)
             if (FUNCS[i].arg_code == val)
@@ -150,7 +153,7 @@ static tree_node_t* diff_add_sub (FILE* fp, tree_node_t* f)
         latex_tree(fp, node_to_right(f));
         fprintf(fp, ")'$\n\\end{center}\n\n");
     }
-    int val = 0;
+    long val = 0;
     node_get_val(f, &val);
     return new_node(&val, sizeof(val), OP,
                     diff(fp, node_to_left(f)), diff(fp, node_to_right(f)));
@@ -173,7 +176,7 @@ static tree_node_t* diff_mult (FILE* fp, tree_node_t* f)
         latex_tree(fp, node_to_left(f));
         fprintf(fp, ")'$\n\\end{center}\n\n");
     }
-    int op = MULT;
+    long op = MULT;
     tree_node_t* left_mult =
         new_node(&op, sizeof(op), OP,
                     diff(fp, node_to_left(f)), branch_copy(node_to_right(f)));
@@ -205,7 +208,7 @@ static tree_node_t* diff_div (FILE* fp, tree_node_t* f)
         latex_tree(fp, node_to_right(f));
         fprintf(fp, ")^2}$\n\\end{center}\n\n");
     }
-    int mult = MULT, sub = SUB, div = DIV, pw = POW;
+    long mult = MULT, sub = SUB, div = DIV, pw = POW;
     double two = 2;
     tree_node_t* numer =
         new_node(&sub, sizeof(sub), OP,
@@ -228,7 +231,7 @@ static tree_node_t* diff_pow (FILE* fp, tree_node_t* f)
 {
     if (RIGHT_IS_NUM(f))
     {
-        int mult = MULT, pw = POW;
+        long mult = MULT, pw = POW;
         double old_pow = 0;
         node_get_val(node_to_right(f), &old_pow);
         double new_pow = old_pow - 1;
@@ -288,7 +291,7 @@ static tree_node_t* diff_pow (FILE* fp, tree_node_t* f)
         latex_tree(fp, f);
         fprintf(fp, ")'$\n\\end{center}\n\n");
     }
-    int div = DIV, mult = MULT, ln = LN, sum = ADD;
+    long div = DIV, mult = MULT, ln = LN, sum = ADD;
     tree_node_t* first_term =
         new_node(&mult, sizeof(mult), OP,
                  new_node(&div, sizeof(div), OP,
@@ -311,7 +314,7 @@ static tree_node_t* diff_pow (FILE* fp, tree_node_t* f)
 
 static tree_node_t* diff_sin (FILE* fp, tree_node_t* f)
 {
-    int cos = COS, mult = MULT;
+    long cos = COS, mult = MULT;
     if (fp)
     {
         fprintf(fp, "Производная синуса это косинус. Главное - не забыть "
@@ -333,7 +336,7 @@ static tree_node_t* diff_sin (FILE* fp, tree_node_t* f)
 
 static tree_node_t* diff_cos (FILE* fp, tree_node_t* f)
 {
-    int sin = SIN, mult = MULT;
+    long sin = SIN, mult = MULT;
     double m_1 = -1;
 
     if (fp)
@@ -376,7 +379,7 @@ static tree_node_t* diff_tg (FILE* fp, tree_node_t* f)
         latex_tree(fp, node_to_right(f));
         fprintf(fp, ")'$\n\\end{center}\n\n");
     }
-    int div = DIV, pw = POW, cos = COS;
+    long div = DIV, pw = POW, cos = COS;
     double two = 2;
     return new_node(&div, sizeof(div), OP,
                     diff(fp, node_to_right(f)),
@@ -390,7 +393,7 @@ static tree_node_t* diff_tg (FILE* fp, tree_node_t* f)
 
 static tree_node_t* diff_ctg (FILE* fp, tree_node_t* f)
 {
-    int div = DIV, pw = POW, sin = SIN, mult = MULT;
+    long div = DIV, pw = POW, sin = SIN, mult = MULT;
     if (fp)
     {
         fprintf(fp, "Производная тангенса - $-\\frac{1}{\\sin^2}$."
@@ -434,7 +437,7 @@ static tree_node_t* diff_ln (FILE* fp, tree_node_t* f)
         latex_tree(fp, node_to_right(f));
         fprintf(fp, "}$\n\\end{center}\n\n");
     }
-    int div = DIV;
+    long div = DIV;
     return new_node(&div, sizeof(div), OP,
                     diff(fp, node_to_right(f)),
                     branch_copy(node_to_right(f)));
@@ -453,7 +456,7 @@ static tree_node_t* diff_exp (FILE* fp, tree_node_t* f)
         latex_tree(fp, f);
         fprintf(fp, "$\n\\end{center}\n\n");
     }
-    int mult = MULT;
+    long mult = MULT;
     return new_node(&mult, sizeof(mult), OP,
                     diff(fp, node_to_right(f)),
                     branch_copy(f));
@@ -473,7 +476,7 @@ static tree_node_t* diff_sqrt (FILE* fp, tree_node_t* f)
         latex_tree(fp, f);
         fprintf(fp, "}$\n\\end{center}\n\n");
     }
-    int div = DIV, mult = MULT;
+    long div = DIV, mult = MULT;
     double two = 2;
     return new_node(&div, sizeof(div), OP,
                     diff(fp, node_to_right(f)),
@@ -510,7 +513,7 @@ tree_node_t* simplify (tree_node_t* node)
 
 tree_node_t* delete_trivials (tree_node_t* node)
 {
-    int val = 0;
+    long val = 0;
     double val_left = 666, val_right = 666;
 
     node_get_val(node, &val);
@@ -588,7 +591,7 @@ tree_node_t* delete_trivials (tree_node_t* node)
 
 tree_node_t* calc_node (tree_node_t* node)
 {
-    int val = 0;
+    long val = 0;
     double val_left = 0, val_right = 0, result = 0;
 
     node_get_val(node, &val);

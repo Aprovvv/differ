@@ -41,6 +41,17 @@ tree_node_t* new_node(void* val_ptr,
     return p;
 }
 
+size_t node_get_size(tree_node_t* node)
+{
+    return NODE_SIZE(node);
+}
+
+
+void node_set_size(tree_node_t* node, int size)
+{
+    node->val_size = size;
+}
+
 size_t node_get_val_size(tree_node_t* node)
 {
     return node->val_size;
@@ -63,7 +74,7 @@ void node_get_val(tree_node_t* node, void* dest)
 
 void node_set_val(tree_node_t* node, void* src)
 {
-    memcpy(&node->val_size, src, node->val_size);
+    memcpy(NODE_VAL_P(node), src, node->val_size);
 }
 
 tree_node_t* node_to_left(tree_node_t* node)
