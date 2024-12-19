@@ -19,8 +19,8 @@ int pr (FILE* fp, const void* ptr, int type);
 int main()
 {
     lexarr lexem_array = init_lexem_array("eq.txt");
-    tree_graph_dump((tree_node_t*)lexem_array.ptr, pr);
-    tree_node_t* root = get_grammar((tree_node_t*)lexem_array.ptr);
+    //tree_graph_dump((tree_node_t*)lexem_array.ptr, pr);
+    tree_node_t* root = get_grammar(lexem_array.ptr);
     tree_graph_dump(root, pr);
     branch_delete(root);
     free(lexem_array.ptr);

@@ -212,17 +212,17 @@ static tree_node_t* diff_div (FILE* fp, tree_node_t* f)
     double two = 2;
     tree_node_t* numer =
         new_node(&sub, sizeof(sub), OP,
-                    new_node(&mult, sizeof(mult), OP,
-                             diff(fp, node_to_left(f)),
-                             branch_copy(node_to_right(f))),
-                    new_node(&mult, sizeof(mult), OP,
-                             branch_copy(node_to_left(f)),
-                             diff(fp, node_to_right(f))));
+                new_node(&mult, sizeof(mult), OP,
+                            diff(fp, node_to_left(f)),
+                            branch_copy(node_to_right(f))),
+                new_node(&mult, sizeof(mult), OP,
+                            branch_copy(node_to_left(f)),
+                            diff(fp, node_to_right(f))));
     tree_node_t* denumer =
         new_node(&pw, sizeof(pw), OP,
-                    branch_copy(node_to_right(f)),
-                    new_node(&two, sizeof(two), NUM,
-                            NULL, NULL));
+                branch_copy(node_to_right(f)),
+                new_node(&two, sizeof(two), NUM,
+                        NULL, NULL));
     return new_node(&div, sizeof(div), OP, numer, denumer);
 }
 

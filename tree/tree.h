@@ -23,4 +23,6 @@ size_t node_get_val_size(tree_node_t* node);
 
 int node_get_type(tree_node_t* node);
 
+extern const size_t NODE_BASE_SIZE;
+
 #endif
