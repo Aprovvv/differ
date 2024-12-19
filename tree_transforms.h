@@ -2,14 +2,14 @@
 #define TREE_TRANSORMS_H
 #include "tree/tree.h"
 
-#define LEFT_IS_NUM(x)   (node_to_left(x)  && node_get_type(node_to_left(x))  == NUM)
-#define RIGHT_IS_NUM(x)  (node_to_right(x) && node_get_type(node_to_right(x)) == NUM)
-#define LEFT_IS_VAR(x)   (node_to_left(x)  && node_get_type(node_to_left(x))  == VAR)
-#define RIGHT_IS_VAR(x)  (node_to_right(x) && node_get_type(node_to_right(x)) == VAR)
-#define LEFT_IS_OP(x)    (node_to_left(x)  && node_get_type(node_to_left(x))  == OP)
-#define RIGHT_IS_OP(x)   (node_to_right(x) && node_get_type(node_to_right(x)) == OP)
-#define LEFT_IS_FUNC(x)  (node_to_left(x)  && node_get_type(node_to_left(x))  == FUNC)
-#define RIGHT_IS_FUNC(x) (node_to_right(x) && node_get_type(node_to_right(x)) == FUNC)
+#define LEFT_IS_NUM(x)   (node_to_left(x)  && node_get_type(node_to_left(x))  == ARG_TYPE_NUM)
+#define RIGHT_IS_NUM(x)  (node_to_right(x) && node_get_type(node_to_right(x)) == ARG_TYPE_NUM)
+#define LEFT_IS_VAR(x)   (node_to_left(x)  && node_get_type(node_to_left(x))  == ARG_TYPE_VAR)
+#define RIGHT_IS_VAR(x)  (node_to_right(x) && node_get_type(node_to_right(x)) == ARG_TYPE_VAR)
+#define LEFT_IS_OP(x)    (node_to_left(x)  && node_get_type(node_to_left(x))  == ARG_TYPE_OP)
+#define RIGHT_IS_OP(x)   (node_to_right(x) && node_get_type(node_to_right(x)) == ARG_TYPE_OP)
+#define LEFT_IS_FUNC(x)  (node_to_left(x)  && node_get_type(node_to_left(x))  == ARG_TYPE_FUNC)
+#define RIGHT_IS_FUNC(x) (node_to_right(x) && node_get_type(node_to_right(x)) == ARG_TYPE_FUNC)
 
 const double EPS = 10e-6;
 
@@ -22,31 +22,31 @@ struct ARG {
 const size_t ARG_LEN = 32;
 
 enum ARG_TYPE {
-    NUM = 1,
-    VAR,
-    OP,
-    FUNC
+    ARG_TYPE_NUM = 1,
+    ARG_TYPE_VAR,
+    ARG_TYPE_OP,
+    ARG_TYPE_FUNC
 };
 //TODO: PREFIX
 enum OP_CODE {
-    ADD = 1,
-    SUB,
-    MULT,
-    DIV,
-    POW,
-    LBRACKET,
-    RBRACKET,
-    DOLLAR
+    OP_CODE_ADD = 1,
+    OP_CODE_SUB,
+    OP_CODE_MULT,
+    OP_CODE_DIV,
+    OP_CODE_POW,
+    OP_CODE_LBRACKET,
+    OP_CODE_RBRACKET,
+    OP_CODE_ENDOFEQ
 };
 
 enum FUNC_CODE {
-    SIN,
-    COS,
-    TG,
-    CTG,
-    LN,
-    EXP,
-    SQRT
+    FUNC_CODE_SIN = 1,
+    FUNC_CODE_COS,
+    FUNC_CODE_TG,
+    FUNC_CODE_CTG,
+    FUNC_CODE_LN,
+    FUNC_CODE_EXP,
+    FUNC_CODE_SQRT
 };
 
 //TODO: external

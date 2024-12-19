@@ -49,10 +49,8 @@ lexarr init_lexem_array (const char* filename)
     result.size = i;
     fclose(fp);
 
-    for (int i = 0; i < result.size; i++)
-    {
-        fprintf(stderr, "type = %d; val = %f\n", result.ptr[i].type, result.ptr[i].val);
-    }
+    /*for (int i = 0; i < result.size; i++)
+        fprintf(stderr, "type = %d; val = %f\n", result.ptr[i].type, result.ptr[i].val);*/
 
     return result;
 }
@@ -60,12 +58,14 @@ lexarr init_lexem_array (const char* filename)
 static int read_lex (FILE* fp, lexem* lex)
 {
     char ch = getc(fp);
-    if (ch == '\n' || ch == EOF)
+    while (ch == ' ')
+        ch = getc(fp);
+    if (ch == EOF)
         return 2;
     if (isdigit(ch))
     {
         ungetc(ch, fp);
-        lex->type = NUM;
+        lex->type = ARG_TYPE_NUM;
         lex->val = get_num(fp);
         return 0;
     }
@@ -76,23 +76,20 @@ static int read_lex (FILE* fp, lexem* lex)
     {
         if (strcmp(OPS[i].str, arg) == 0)
         {
-            double code = OPS[i].arg_code;
-            lex->type = OP;
-            lex->val = code;
+            lex->val = OPS[i].arg_code;
+            lex->type = ARG_TYPE_OP;
             return 0;
         }
     }
 
     read_name(fp, arg + 1);
-    //fprintf(stderr, "arg = _%s_\n", arg);
 
     for (size_t i = 0; i < FUNCS_COUNT; i++)
     {
         if (strcmp(FUNCS[i].str, arg) == 0)
         {
-            double code = FUNCS[i].arg_code;
-            lex->type = FUNC;
-            lex->val = code;
+            lex->val = FUNCS[i].arg_code;
+            lex->type = ARG_TYPE_FUNC;
             return 0;
         }
     }
@@ -101,9 +98,8 @@ static int read_lex (FILE* fp, lexem* lex)
     {
         if (strcmp(VARS[i].str, arg) == 0)
         {
-            double code = VARS[i].arg_code;
-            lex->type = VAR;
-            lex->val = code;
+            lex->val = VARS[i].arg_code;
+            lex->type = ARG_TYPE_VAR;
             return 0;
         }
     }
@@ -117,7 +113,7 @@ static double get_num(FILE* fp)
     FILE* fp_0 = fp;
     int less_zero = 0, point = 0;
     int ch = getc(fp);
-    //fprintf(stderr, "ch = %c\n", ch);
+    int k = 1;
     if (ch == '-')
     {
         less_zero = 1;
@@ -125,12 +121,12 @@ static double get_num(FILE* fp)
     }
     while (('0' <= ch && ch <= '9') || ch == '.')
     {
-        int k = 1;
         if (ch == '.')
         {
             point = 1;
-            if (fp == fp_0)
-                return NAN;
+            /*if (fp == fp_0)//FIXME пофиксить точку без числа
+                return NAN;*/
+            ch = getc(fp);
             continue;
         }
         if (!point)

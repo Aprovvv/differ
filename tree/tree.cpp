@@ -5,7 +5,7 @@
 
 #define NODE_VAL_P(node) (void*)((char*)&node->right + sizeof(tree_node_t*))
 #define NODE_SIZE(node) (sizeof(long) + 2*sizeof(tree_node_t*) + sizeof(size_t) + node->val_size)
-#define DETAILED_DUMP
+//#define DETAILED_DUMP
 
 struct tree_node_t
 {
@@ -113,10 +113,8 @@ void branch_delete(tree_node_t* node)
 {
     if (node->left)
         branch_delete(node->left);
-    fprintf(stderr, "succesfully freed %p\n", node->left);
     if (node->right)
         branch_delete(node->right);
-    fprintf(stderr, "succesfully freed %p\n", node->right);
     //tree_graph_dump(node, pr);
     free(node);
 }

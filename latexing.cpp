@@ -39,16 +39,16 @@ int latex_tree (FILE* fp, tree_node_t* node)
     //tree_graph_dump(node, pr);
     switch (node_get_type(node))
     {
-    case NUM:
+    case ARG_TYPE_NUM:
         latex_num(fp, node);
         break;
-    case VAR:
+    case ARG_TYPE_VAR:
         latex_var(fp, node);
         break;
-    case FUNC:
+    case ARG_TYPE_FUNC:
         latex_func(fp, node);
         break;
-    case OP:
+    case ARG_TYPE_OP:
         latex_op(fp, node);
         break;
     default:
@@ -114,22 +114,22 @@ static int latex_op (FILE* fp, tree_node_t* node)
     node_get_val(node, &val);
     switch (val)
     {
-    case ADD:
+    case OP_CODE_ADD:
         latex_tree(fp, node_to_left(node));
         fprintf(fp, "+");
         latex_tree(fp, node_to_right(node));
         return 0;
-    case SUB:
+    case OP_CODE_SUB:
         latex_tree(fp, node_to_left(node));
         fprintf(fp, "-");
         latex_tree(fp, node_to_right(node));
         return 0;
-    case MULT:
+    case OP_CODE_MULT:
         if (LEFT_IS_OP(node))
         {
             long left_val = 0;
             node_get_val(node_to_left(node), &left_val);
-            if (left_val == SUB || left_val == ADD)
+            if (left_val == OP_CODE_SUB || left_val == OP_CODE_ADD)
             {
                 fprintf(fp, "(");
                 latex_tree(fp, node_to_left(node));
@@ -146,13 +146,13 @@ static int latex_op (FILE* fp, tree_node_t* node)
         }
 
         if (!RIGHT_IS_VAR(node) || !LEFT_IS_NUM(node))
-            fprintf(fp, "*");
+            fprintf(fp, "\\cdot");
 
         if (RIGHT_IS_OP(node))
         {
             long right_val = 0;
             node_get_val(node_to_right(node), &right_val);
-            if (right_val == SUB || right_val == ADD)
+            if (right_val == OP_CODE_SUB || right_val == OP_CODE_ADD)
             {
                 fprintf(fp, "(");
                 latex_tree(fp, node_to_right(node));
@@ -169,14 +169,14 @@ static int latex_op (FILE* fp, tree_node_t* node)
         }
 
         return 0;
-    case DIV:
+    case OP_CODE_DIV:
         fprintf(fp, "\\frac{");
         latex_tree(fp, node_to_left(node));
         fprintf(fp, "}{");
         latex_tree(fp, node_to_right(node));
         fprintf(fp, "}");
         return 0;
-    case POW:
+    case OP_CODE_POW:
         if (LEFT_IS_OP(node) || LEFT_IS_FUNC(node))
         {
             fprintf(fp, "(");

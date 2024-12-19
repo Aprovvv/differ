@@ -27,24 +27,24 @@ extern const struct ARG VARS[] = {
 };
 
 extern const struct ARG OPS[] = {
-    {"+", ADD, diff_add_sub},
-    {"-", SUB, diff_add_sub},
-    {"*", MULT, diff_mult},
-    {"/", DIV, diff_div},
-    {"^", POW, diff_pow},
-    {"(", LBRACKET, NULL},
-    {")", RBRACKET, NULL},
-    {"$", DOLLAR, NULL}
+    {"+", OP_CODE_ADD,      diff_add_sub},
+    {"-", OP_CODE_SUB,      diff_add_sub},
+    {"*", OP_CODE_MULT,     diff_mult},
+    {"/", OP_CODE_DIV,      diff_div},
+    {"^", OP_CODE_POW,      diff_pow},
+    {"(", OP_CODE_LBRACKET, NULL},
+    {")", OP_CODE_RBRACKET, NULL},
+    {"\n", OP_CODE_ENDOFEQ,  NULL}
 };
 
 extern const struct ARG FUNCS[] = {
-    {"sin", SIN, diff_sin},
-    {"cos", COS, diff_cos},
-    {"tg", TG, diff_tg},
-    {"ctg", CTG, diff_ctg},
-    {"ln", LN, diff_ln},
-    {"exp", EXP, diff_exp},
-    {"sqrt", SQRT, diff_sqrt}
+    {"sin", FUNC_CODE_SIN,  diff_sin},
+    {"cos", FUNC_CODE_COS,  diff_cos},
+    {"tg",  FUNC_CODE_TG,   diff_tg},
+    {"ctg", FUNC_CODE_CTG,  diff_ctg},
+    {"ln",  FUNC_CODE_LN,   diff_ln},
+    {"exp", FUNC_CODE_EXP,  diff_exp},
+    {"sqrt",FUNC_CODE_SQRT, diff_sqrt}
 };
 
 extern const size_t VARS_COUNT = sizeof(VARS)/sizeof(VARS[0]);
@@ -85,11 +85,11 @@ tree_node_t* diff_and_tex (tree_node_t* root)
 
 tree_node_t* diff (FILE* fp, tree_node_t* f)
 {
-    if (node_get_type(f) == NUM)
+    if (node_get_type(f) == ARG_TYPE_NUM)
         return diff_num(fp, f);
-    if (node_get_type(f) == VAR)
+    if (node_get_type(f) == ARG_TYPE_VAR)
         return diff_var(fp, f);
-    if (node_get_type(f) == OP)
+    if (node_get_type(f) == ARG_TYPE_OP)
     {
         long val = 0;
         node_get_val(f, &val);
@@ -100,7 +100,7 @@ tree_node_t* diff (FILE* fp, tree_node_t* f)
         assert(0 && "UNDEFINED OPERATOR");
     }
     //TODO: остальные функции
-    if (node_get_type(f) == FUNC)
+    if (node_get_type(f) == ARG_TYPE_FUNC)
     {
         long val = 0;
         node_get_val(f, &val);
@@ -123,7 +123,7 @@ static tree_node_t* diff_num (FILE* fp, tree_node_t* f)
         fprintf(fp, ")' = 0$\n\\end{center}\n\n");
     }
     double val = 0;
-    return new_node(&val, sizeof(val), NUM, NULL, NULL);
+    return new_node(&val, sizeof(val), ARG_TYPE_NUM, NULL, NULL);
 }
 
 static tree_node_t* diff_var (FILE* fp, tree_node_t* f)
@@ -136,7 +136,7 @@ static tree_node_t* diff_var (FILE* fp, tree_node_t* f)
         fprintf(fp, ")' = 1$\n\\end{center}\n\n");
     }
     double val = 1;
-    return new_node(&val, sizeof(val), NUM, NULL, NULL);
+    return new_node(&val, sizeof(val), ARG_TYPE_NUM, NULL, NULL);
 }
 
 static tree_node_t* diff_add_sub (FILE* fp, tree_node_t* f)
@@ -155,7 +155,7 @@ static tree_node_t* diff_add_sub (FILE* fp, tree_node_t* f)
     }
     long val = 0;
     node_get_val(f, &val);
-    return new_node(&val, sizeof(val), OP,
+    return new_node(&val, sizeof(val), ARG_TYPE_OP,
                     diff(fp, node_to_left(f)), diff(fp, node_to_right(f)));
 }
 
@@ -176,15 +176,15 @@ static tree_node_t* diff_mult (FILE* fp, tree_node_t* f)
         latex_tree(fp, node_to_left(f));
         fprintf(fp, ")'$\n\\end{center}\n\n");
     }
-    long op = MULT;
+    long op = OP_CODE_MULT;
     tree_node_t* left_mult =
-        new_node(&op, sizeof(op), OP,
+        new_node(&op, sizeof(op), ARG_TYPE_OP,
                     diff(fp, node_to_left(f)), branch_copy(node_to_right(f)));
     tree_node_t* right_mult =
-        new_node(&op, sizeof(op), OP,
+        new_node(&op, sizeof(op), ARG_TYPE_OP,
                     branch_copy(node_to_left(f)), diff(fp, node_to_right(f)));
-    op = ADD;
-    return new_node(&op, sizeof(op), OP,
+    op = OP_CODE_ADD;
+    return new_node(&op, sizeof(op), ARG_TYPE_OP,
                 left_mult, right_mult);
 }
 
@@ -208,22 +208,22 @@ static tree_node_t* diff_div (FILE* fp, tree_node_t* f)
         latex_tree(fp, node_to_right(f));
         fprintf(fp, ")^2}$\n\\end{center}\n\n");
     }
-    long mult = MULT, sub = SUB, div = DIV, pw = POW;
+    long mult = OP_CODE_MULT, sub = OP_CODE_SUB, div = OP_CODE_DIV, pw = OP_CODE_POW;
     double two = 2;
     tree_node_t* numer =
-        new_node(&sub, sizeof(sub), OP,
-                new_node(&mult, sizeof(mult), OP,
+        new_node(&sub, sizeof(sub), ARG_TYPE_OP,
+                new_node(&mult, sizeof(mult), ARG_TYPE_OP,
                             diff(fp, node_to_left(f)),
                             branch_copy(node_to_right(f))),
-                new_node(&mult, sizeof(mult), OP,
+                new_node(&mult, sizeof(mult), ARG_TYPE_OP,
                             branch_copy(node_to_left(f)),
                             diff(fp, node_to_right(f))));
     tree_node_t* denumer =
-        new_node(&pw, sizeof(pw), OP,
+        new_node(&pw, sizeof(pw), ARG_TYPE_OP,
                 branch_copy(node_to_right(f)),
-                new_node(&two, sizeof(two), NUM,
+                new_node(&two, sizeof(two), ARG_TYPE_NUM,
                         NULL, NULL));
-    return new_node(&div, sizeof(div), OP, numer, denumer);
+    return new_node(&div, sizeof(div), ARG_TYPE_OP, numer, denumer);
 }
 
 
@@ -231,7 +231,7 @@ static tree_node_t* diff_pow (FILE* fp, tree_node_t* f)
 {
     if (RIGHT_IS_NUM(f))
     {
-        long mult = MULT, pw = POW;
+        long mult = OP_CODE_MULT, pw = OP_CODE_POW;
         double old_pow = 0;
         node_get_val(node_to_right(f), &old_pow);
         double new_pow = old_pow - 1;
@@ -255,14 +255,14 @@ static tree_node_t* diff_pow (FILE* fp, tree_node_t* f)
         }
 
         tree_node_t* result =
-            new_node(&pw, sizeof(pw), OP,
+            new_node(&pw, sizeof(pw), ARG_TYPE_OP,
                      branch_copy(node_to_left(f)),
-                     new_node(&new_pow, sizeof(new_pow), NUM, NULL, NULL));
+                     new_node(&new_pow, sizeof(new_pow), ARG_TYPE_NUM, NULL, NULL));
         result =
-            new_node(&mult, sizeof(mult), OP,
-                     new_node(&old_pow, sizeof(old_pow), NUM, NULL, NULL),
+            new_node(&mult, sizeof(mult), ARG_TYPE_OP,
+                     new_node(&old_pow, sizeof(old_pow), ARG_TYPE_NUM, NULL, NULL),
                      result);
-        return new_node(&mult, sizeof(mult), OP,
+        return new_node(&mult, sizeof(mult), ARG_TYPE_OP,
                         result,
                         diff(fp, node_to_left(f)));
     }
@@ -291,22 +291,22 @@ static tree_node_t* diff_pow (FILE* fp, tree_node_t* f)
         latex_tree(fp, f);
         fprintf(fp, ")'$\n\\end{center}\n\n");
     }
-    long div = DIV, mult = MULT, ln = LN, sum = ADD;
+    long div = OP_CODE_DIV, mult = OP_CODE_MULT, ln = FUNC_CODE_LN, sum = OP_CODE_ADD;
     tree_node_t* first_term =
-        new_node(&mult, sizeof(mult), OP,
-                 new_node(&div, sizeof(div), OP,
+        new_node(&mult, sizeof(mult), ARG_TYPE_OP,
+                 new_node(&div, sizeof(div), ARG_TYPE_OP,
                           branch_copy(node_to_right(f)),
                           branch_copy(node_to_left(f))),
                  diff(fp, node_to_left(f)));
     tree_node_t* second_term =
-        new_node(&mult, sizeof(mult), OP,
-                 new_node(&ln, sizeof(ln), FUNC,
+        new_node(&mult, sizeof(mult), ARG_TYPE_OP,
+                 new_node(&ln, sizeof(ln), ARG_TYPE_FUNC,
                           NULL,
                           branch_copy(node_to_left(f))),
                  diff(fp, node_to_right(f)));
 
-    return new_node(&mult, sizeof(mult), OP,
-                    new_node(&sum, sizeof(sum), OP,
+    return new_node(&mult, sizeof(mult), ARG_TYPE_OP,
+                    new_node(&sum, sizeof(sum), ARG_TYPE_OP,
                              first_term,
                              second_term),
                     branch_copy(f));
@@ -314,7 +314,7 @@ static tree_node_t* diff_pow (FILE* fp, tree_node_t* f)
 
 static tree_node_t* diff_sin (FILE* fp, tree_node_t* f)
 {
-    long cos = COS, mult = MULT;
+    long cos = FUNC_CODE_COS, mult = OP_CODE_MULT;
     if (fp)
     {
         fprintf(fp, "Производная синуса это косинус. Главное - не забыть "
@@ -328,15 +328,15 @@ static tree_node_t* diff_sin (FILE* fp, tree_node_t* f)
         fprintf(fp, ")'$\n\\end{center}\n\n");
     }
     tree_node_t* cos_node =
-        new_node(&cos, sizeof(cos), FUNC,
+        new_node(&cos, sizeof(cos), ARG_TYPE_FUNC,
                     NULL, branch_copy(node_to_right(f)));
-    return new_node(&mult, sizeof(mult), OP,
+    return new_node(&mult, sizeof(mult), ARG_TYPE_OP,
                     cos_node, diff(fp, node_to_right(f)));
 }
 
 static tree_node_t* diff_cos (FILE* fp, tree_node_t* f)
 {
-    long sin = SIN, mult = MULT;
+    long sin = FUNC_CODE_SIN, mult = OP_CODE_MULT;
     double m_1 = -1;
 
     if (fp)
@@ -353,14 +353,14 @@ static tree_node_t* diff_cos (FILE* fp, tree_node_t* f)
     }
 
     tree_node_t* minus_1 =
-        new_node(&m_1, sizeof(m_1), NUM,
+        new_node(&m_1, sizeof(m_1), ARG_TYPE_NUM,
                     NULL, NULL);
     tree_node_t* sin_node =
-        new_node(&sin, sizeof(sin), FUNC,
+        new_node(&sin, sizeof(sin), ARG_TYPE_FUNC,
                     NULL, branch_copy(node_to_right(f)));
     tree_node_t* minus_sin =
-        new_node(&mult, sizeof(mult), OP, minus_1, sin_node);
-    return new_node(&mult, sizeof(mult), OP,
+        new_node(&mult, sizeof(mult), ARG_TYPE_OP, minus_1, sin_node);
+    return new_node(&mult, sizeof(mult), ARG_TYPE_OP,
                     minus_sin, diff(fp, node_to_right(f)));
 }
 
@@ -379,21 +379,21 @@ static tree_node_t* diff_tg (FILE* fp, tree_node_t* f)
         latex_tree(fp, node_to_right(f));
         fprintf(fp, ")'$\n\\end{center}\n\n");
     }
-    long div = DIV, pw = POW, cos = COS;
+    long div = OP_CODE_DIV, pw = OP_CODE_POW, cos = FUNC_CODE_COS;
     double two = 2;
-    return new_node(&div, sizeof(div), OP,
+    return new_node(&div, sizeof(div), ARG_TYPE_OP,
                     diff(fp, node_to_right(f)),
-                    new_node(&pw, sizeof(pw), OP,
-                             new_node(&cos, sizeof(cos), FUNC,
+                    new_node(&pw, sizeof(pw), ARG_TYPE_OP,
+                             new_node(&cos, sizeof(cos), ARG_TYPE_FUNC,
                                       NULL, branch_copy(node_to_right(f))),
-                             new_node(&two, sizeof(two), NUM,
+                             new_node(&two, sizeof(two), ARG_TYPE_NUM,
                                       NULL, NULL)));
 
 }
 
 static tree_node_t* diff_ctg (FILE* fp, tree_node_t* f)
 {
-    long div = DIV, pw = POW, sin = SIN, mult = MULT;
+    long div = OP_CODE_DIV, pw = OP_CODE_POW, sin = FUNC_CODE_SIN, mult = OP_CODE_MULT;
     if (fp)
     {
         fprintf(fp, "Производная тангенса - $-\\frac{1}{\\sin^2}$."
@@ -408,17 +408,17 @@ static tree_node_t* diff_ctg (FILE* fp, tree_node_t* f)
         fprintf(fp, ")'$\n\\end{center}\n\n");
     }
     double two = 2, minus_1 = -1;
-    return new_node(&div, sizeof(div), OP,
-                    new_node(&mult, sizeof(mult), OP,
-                             new_node(&minus_1, sizeof(minus_1), NUM,
+    return new_node(&div, sizeof(div), ARG_TYPE_OP,
+                    new_node(&mult, sizeof(mult), ARG_TYPE_OP,
+                             new_node(&minus_1, sizeof(minus_1), ARG_TYPE_NUM,
                                       NULL,
                                       NULL),
                              diff(fp, node_to_right(f))),
-                    new_node(&pw, sizeof(pw), OP,
-                             new_node(&sin, sizeof(sin), FUNC,
+                    new_node(&pw, sizeof(pw), ARG_TYPE_OP,
+                             new_node(&sin, sizeof(sin), ARG_TYPE_FUNC,
                                       NULL,
                                       branch_copy(node_to_right(f))),
-                             new_node(&two, sizeof(two), NUM,
+                             new_node(&two, sizeof(two), ARG_TYPE_NUM,
                                       NULL,
                                       NULL)));
 
@@ -437,8 +437,8 @@ static tree_node_t* diff_ln (FILE* fp, tree_node_t* f)
         latex_tree(fp, node_to_right(f));
         fprintf(fp, "}$\n\\end{center}\n\n");
     }
-    long div = DIV;
-    return new_node(&div, sizeof(div), OP,
+    long div = OP_CODE_DIV;
+    return new_node(&div, sizeof(div), ARG_TYPE_OP,
                     diff(fp, node_to_right(f)),
                     branch_copy(node_to_right(f)));
 }
@@ -456,8 +456,8 @@ static tree_node_t* diff_exp (FILE* fp, tree_node_t* f)
         latex_tree(fp, f);
         fprintf(fp, "$\n\\end{center}\n\n");
     }
-    long mult = MULT;
-    return new_node(&mult, sizeof(mult), OP,
+    long mult = OP_CODE_MULT;
+    return new_node(&mult, sizeof(mult), ARG_TYPE_OP,
                     diff(fp, node_to_right(f)),
                     branch_copy(f));
 }
@@ -476,12 +476,12 @@ static tree_node_t* diff_sqrt (FILE* fp, tree_node_t* f)
         latex_tree(fp, f);
         fprintf(fp, "}$\n\\end{center}\n\n");
     }
-    long div = DIV, mult = MULT;
+    long div = OP_CODE_DIV, mult = OP_CODE_MULT;
     double two = 2;
-    return new_node(&div, sizeof(div), OP,
+    return new_node(&div, sizeof(div), ARG_TYPE_OP,
                     diff(fp, node_to_right(f)),
-                    new_node(&mult, sizeof(mult), OP,
-                             new_node(&two, sizeof(two), NUM, NULL, NULL),
+                    new_node(&mult, sizeof(mult), ARG_TYPE_OP,
+                             new_node(&two, sizeof(two), ARG_TYPE_NUM, NULL, NULL),
                              branch_copy(f)));
 }
 
@@ -496,13 +496,13 @@ tree_node_t* simplify (tree_node_t* node)
         node_add_right(node, simplify(node_to_right(node)));
 
 
-    if (node_get_type(result) == OP &&
+    if (node_get_type(result) == ARG_TYPE_OP &&
         LEFT_IS_NUM(result) && RIGHT_IS_NUM(result))
     {
         result = calc_node(result);
     }
 
-    if (node_get_type(result) == OP &&
+    if (node_get_type(result) == ARG_TYPE_OP &&
         (LEFT_IS_NUM(result) || RIGHT_IS_NUM(result)))
     {
         result = delete_trivials(result);
@@ -525,7 +525,7 @@ tree_node_t* delete_trivials (tree_node_t* node)
 
     switch(val)
     {
-    case ADD:
+    case OP_CODE_ADD:
     //TODO: здесь копируется и возвращается вся ненулевая ветка.
     //было бы лучше удалить всего два узла, но нет нужной функции
         if (dblcmp(val_left, 0) == 0)
@@ -534,7 +534,7 @@ tree_node_t* delete_trivials (tree_node_t* node)
             branch_delete(node);
             return result;
         }
-    case SUB:
+    case OP_CODE_SUB:
         if (dblcmp(val_right, 0) == 0)
         {
             result = branch_copy(node_to_left(node));
@@ -542,12 +542,12 @@ tree_node_t* delete_trivials (tree_node_t* node)
             return result;
         }
         break;
-    case MULT:
+    case OP_CODE_MULT:
         if (dblcmp(val_right, 0) == 0)
         {
             double zero = 0;
             branch_delete(node);
-            return new_node(&zero, sizeof(zero), NUM, NULL, NULL);
+            return new_node(&zero, sizeof(zero), ARG_TYPE_NUM, NULL, NULL);
         }
         if (dblcmp(val_left, 1) == 0)
         {
@@ -555,12 +555,12 @@ tree_node_t* delete_trivials (tree_node_t* node)
             branch_delete(node);
             return result;
         }
-    case DIV:
+    case OP_CODE_DIV:
         if (dblcmp(val_left, 0) == 0)
         {
             double zero = 0;
             branch_delete(node);
-            return new_node(&zero, sizeof(zero), NUM, NULL, NULL);
+            return new_node(&zero, sizeof(zero), ARG_TYPE_NUM, NULL, NULL);
         }
         if (dblcmp(val_right, 1) == 0)
         {
@@ -569,7 +569,7 @@ tree_node_t* delete_trivials (tree_node_t* node)
             return result;
         }
         break;
-    case POW:
+    case OP_CODE_POW:
         if (dblcmp(val_right, 1) == 0)
         {
             result = branch_copy(node_to_left(node));
@@ -580,7 +580,7 @@ tree_node_t* delete_trivials (tree_node_t* node)
         {
             double one = 1;
             branch_delete(node);
-            return new_node(&one, sizeof(one), NUM, NULL, NULL);
+            return new_node(&one, sizeof(one), ARG_TYPE_NUM, NULL, NULL);
         }
         break;
     default:
@@ -598,21 +598,21 @@ tree_node_t* calc_node (tree_node_t* node)
     node_get_val(node_to_left(node), &val_left);
     node_get_val(node_to_right(node), &val_right);
 
-    if (val == POW)
+    if (val == OP_CODE_POW)
         if (!is_int(val_right))
             return node;
     switch(val)
     {
-        case ADD:
+        case OP_CODE_ADD:
             result = val_left + val_right;
             break;
-        case SUB:
+        case OP_CODE_SUB:
             result = val_left - val_right;
             break;
-        case MULT:
+        case OP_CODE_MULT:
             result = val_left * val_right;
             break;
-        case DIV:
+        case OP_CODE_DIV:
             //FIXME бля поч не работает
             /*if (val_right == 0)
                 return NULL;
@@ -629,14 +629,14 @@ tree_node_t* calc_node (tree_node_t* node)
 
             result = val_left / val_right;
             break;
-        case POW:
+        case OP_CODE_POW:
             result = pow(val_left, val_right);
             break;
         default:
             return NULL;
     }
     branch_delete(node);
-    return new_node(&result, sizeof(result), NUM, NULL, NULL);
+    return new_node(&result, sizeof(result), ARG_TYPE_NUM, NULL, NULL);
 }
 
 static int is_int (double x)

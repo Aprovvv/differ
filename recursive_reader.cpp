@@ -5,55 +5,70 @@
 #include "recursive_reader.h"
 #include "lexer.h"
 
-static tree_node_t* get_E (lexem* lex_arr);
-static tree_node_t* get_T (lexem* lex_arr);
-static tree_node_t* get_P (lexem* lex_arr);
-static tree_node_t* get_N (lexem* lex_arr);
+static tree_node_t* get_PM  (lexem* lex_arr);
+static tree_node_t* get_MD  (lexem* lex_arr);
+static tree_node_t* get_P   (lexem* lex_arr);
+static tree_node_t* get_POW (lexem* lex_arr);
+static tree_node_t* get_NUM (lexem* lex_arr);
+static tree_node_t* get_VAR (lexem* lex_arr);
+static tree_node_t* get_FUNC(lexem* lex_arr);
 
 static void syntax_error (lexem* lexarr);
 
-#define PTR(a, b) ((tree_node_t*)((char*)a + node_size*b))
+#define PTR(a, b) ((tree_node_t*)((char*)a + NODE_SIZE*b))
 
-static const size_t node_size = 40;
+static const size_t NODE_SIZE = NODE_BASE_SIZE + sizeof(double);
 static int p = 0;
 
 tree_node_t* get_grammar (lexem* lex_arr)
 {
     p = 0;
-    tree_node_t* node = get_E(lex_arr);
-    fprintf(stderr, "(int)lex_arr[p].type = %d\n", (int)lex_arr[p].type);
-    if ((int)lex_arr[p].val != DOLLAR)
+    tree_node_t* node = get_PM(lex_arr);
+    if ((int)lex_arr[p].val != OP_CODE_ENDOFEQ)
         syntax_error(lex_arr);
     return node;
 }
 
-static tree_node_t* get_E (lexem* lex_arr)
+static tree_node_t* get_PM (lexem* lex_arr)
 {
-    tree_node_t* node = get_T(lex_arr);
+    tree_node_t* node = get_MD(lex_arr);
     long op = (long)lex_arr[p].val;
-    fprintf(stderr, "op = %d\n", op);
-    while((op == ADD || op == SUB) && lex_arr[p].type == OP)
+    while((op == OP_CODE_ADD || op == OP_CODE_SUB)
+            && lex_arr[p].type == ARG_TYPE_OP)
     {
         p++;
-        tree_node_t* val2 = get_T(lex_arr);
-        node = new_node(&op, sizeof(op), OP, node, val2);
+        tree_node_t* val2 = get_MD(lex_arr);
+        node = new_node(&op, sizeof(op), ARG_TYPE_OP, node, val2);
         op = (long)lex_arr[p].val;
     }
     return node;
 }
 
-static tree_node_t* get_T (lexem* lex_arr)
+static tree_node_t* get_MD (lexem* lex_arr)
+{
+    tree_node_t* node = get_POW(lex_arr);
+    long op = (long)lex_arr[p].val;
+    while((op == OP_CODE_MULT || op == OP_CODE_DIV)
+            && lex_arr[p].type == ARG_TYPE_OP)
+    {
+        p++;
+        tree_node_t* val2 = get_POW(lex_arr);
+        node = new_node(&op, sizeof(op), ARG_TYPE_OP, node, val2);
+        op = (long)lex_arr[p].val;
+    }
+    return node;
+}
+
+static tree_node_t* get_POW (lexem* lex_arr)
 {
     tree_node_t* node = get_P(lex_arr);
     long op = (long)lex_arr[p].val;
-    fprintf(stderr, "op = %d\n", op);
-    while((op == MULT || op == DIV) && lex_arr[p].type == OP)
+    while((op == OP_CODE_POW) && lex_arr[p].type == ARG_TYPE_OP)
     {
         p++;
         tree_node_t* val2 = get_P(lex_arr);
-        node = new_node(&op, sizeof(op), OP, node, val2);
+        node = new_node(&op, sizeof(op), ARG_TYPE_OP, node, val2);
         op = (long)lex_arr[p].val;
-        fprintf(stderr, "p = %d, val = %f, type = %d, op = %d\n", p, lex_arr[p].val, lex_arr[p].type, op);
     }
     return node;
 }
@@ -61,38 +76,53 @@ static tree_node_t* get_T (lexem* lex_arr)
 static tree_node_t* get_P (lexem* lex_arr)
 {
     long val = (long)lex_arr[p].val;
-    if (val == '(')
+    if (val == OP_CODE_LBRACKET && lex_arr[p].type == ARG_TYPE_OP)
     {
         p++;
-        tree_node_t* node = get_E(lex_arr);
+        tree_node_t* node = get_PM(lex_arr);
         val = (long)lex_arr[p].val;
-        if (val != ')')
-            exit(EXIT_FAILURE);
+        if (val != OP_CODE_RBRACKET)
+            syntax_error(lex_arr);
         p++;
         return node;
     }
     else
     {
-        return get_N(lex_arr);
+        switch (lex_arr[p].type)
+        {
+        case ARG_TYPE_NUM:
+            return get_NUM(lex_arr);
+        case ARG_TYPE_VAR:
+            return get_VAR(lex_arr);
+        case ARG_TYPE_FUNC:
+            return get_FUNC(lex_arr);
+        default:
+            return NULL;
+        }
     }
 }
 
-static tree_node_t* get_N (lexem* lex_arr)//TODO: дробные числа
+static tree_node_t* get_NUM (lexem* lex_arr)
 {
-    int type = lex_arr[p].type;
-    if (type == NUM)
-    {
-        fprintf(stderr, "type = %f\n", lex_arr[p].val);
-        tree_node_t* node = new_node(&lex_arr[p].val, sizeof(double), NUM, NULL, NULL);
-        p++;
-        return node;
-    }
-    else
-        return NULL;
+    return new_node(&lex_arr[p++].val, sizeof(double),
+                    ARG_TYPE_NUM, NULL, NULL);
+}
+
+static tree_node_t* get_VAR(lexem* lex_arr)
+{
+    long var = (long)lex_arr[p++].val;
+    return new_node(&var, sizeof(var), ARG_TYPE_VAR, NULL, NULL);
+}
+
+static tree_node_t* get_FUNC(lexem* lex_arr)
+{
+    long func = (long)lex_arr[p++].val;
+    return new_node(&func, sizeof(func),
+                    ARG_TYPE_FUNC, NULL, get_PM(lex_arr));
 }
 
 static void syntax_error (lexem* lex_arr)
 {
-    fprintf(stderr, "SYNTAX ERROR NEAR IN P = %d\n", p);
+    fprintf(stderr, "SYNTAX ERROR IN P = %d\n", p);
     exit(EXIT_FAILURE);
 }
