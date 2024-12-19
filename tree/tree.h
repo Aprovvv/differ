@@ -16,7 +16,7 @@ void tree_print(FILE* fp, tree_node_t* node, int(*print_func)(FILE* fp, const vo
 void tree_graph_dump(tree_node_t* node, int(*print_func)(FILE* fp, const void* ptr, int type));
 void node_set_val(tree_node_t* node, void* src);
 void node_set_type(tree_node_t* node, int type);
-void node_set_size(tree_node_t* node, int size);
+void node_set_size(tree_node_t* node, size_t size);
 
 size_t node_get_size(tree_node_t* node);
 size_t node_get_val_size(tree_node_t* node);

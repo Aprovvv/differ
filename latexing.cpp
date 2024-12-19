@@ -78,7 +78,7 @@ static int latex_var (FILE* fp, tree_node_t* node)
 {
     long val;
     node_get_val(node, &val);
-    fprintf(fp, "%c", val);
+    fprintf(fp, "%c", (int)val);
     return 0;
 }
 

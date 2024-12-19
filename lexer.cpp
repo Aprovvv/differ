@@ -26,7 +26,7 @@ lexarr init_lexem_array (const char* filename)
     stat(filename, &fileinfo);
 
     size_t lex_size = sizeof(lexem);
-    result.ptr = (lexem*) calloc(lex_size, fileinfo.st_size);
+    result.ptr = (lexem*) calloc(lex_size, (size_t)fileinfo.st_size);
     if (result.ptr == NULL)
     {
         fprintf(stderr, "ERROR IN ALLOCATING LEXEM ARRAY\n");
@@ -34,12 +34,12 @@ lexarr init_lexem_array (const char* filename)
     }
 
     size_t i = 0;
-    for (i = 0; i < fileinfo.st_size; i++)
+    for (i = 0; i < (size_t)fileinfo.st_size; i++)
     {
         int code = read_lex(fp, result.ptr + i);
         if (code == 1)
         {
-            fprintf(stderr, "error while reading lexem; i = %d\n");
+            fprintf(stderr, "error while reading lexem; p = %zu\n", i);
             free(result.ptr);
             return lexarr {};
         }
@@ -57,9 +57,9 @@ lexarr init_lexem_array (const char* filename)
 
 static int read_lex (FILE* fp, lexem* lex)
 {
-    char ch = getc(fp);
+    char ch = (char)getc(fp);
     while (ch == ' ')
-        ch = getc(fp);
+        ch = (char)getc(fp);
     if (ch == EOF)
         return 2;
     if (isdigit(ch))
@@ -147,7 +147,7 @@ static void read_name (FILE* src, char* dest)
     int i = 0;
     while (isalpha(ch))
     {
-        dest[i++] = ch;
+        dest[i++] = (char)ch;
         ch = getc(src);
     }
     ungetc(ch, src);
