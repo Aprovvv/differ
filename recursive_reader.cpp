@@ -103,7 +103,6 @@ static tree_node_t* get_POW (lexem* lex_arr)
             goto sntxerr;
         node = new_node(&op, sizeof(op), ARG_TYPE_OP, node, node2);
         op = (long)lex_arr[p].val;
-        fprintf(stderr, "POW p = %d\n");
     }
     return node;
 sntxerr:
