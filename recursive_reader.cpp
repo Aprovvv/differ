@@ -24,7 +24,8 @@ tree_node_t* get_grammar (lexem* lex_arr)
 {
     p = 0;
     tree_node_t* node = get_PM(lex_arr);
-    if ((int)lex_arr[p].val != OP_CODE_ENDOFEQ)
+
+    if (node == NULL || (int)lex_arr[p].val != OP_CODE_ENDOFEQ)
         syntax_error(lex_arr);
     return node;
 }
@@ -32,63 +33,99 @@ tree_node_t* get_grammar (lexem* lex_arr)
 static tree_node_t* get_PM (lexem* lex_arr)
 {
     tree_node_t* node = get_MD(lex_arr);
+    tree_node_t* node2 = NULL;
+    long op = 0;
+    if (!node)
+        goto sntxerr;
     if (node == NULL)
     {
         long zero = 0;
         node = new_node(&zero, sizeof(zero), ARG_TYPE_NUM, NULL, NULL);
     }
-    long op = (long)lex_arr[p].val;
+    op = (long)lex_arr[p].val;
     while((op == OP_CODE_ADD || op == OP_CODE_SUB)
             && lex_arr[p].type == ARG_TYPE_OP)
     {
         p++;
-        tree_node_t* val2 = get_MD(lex_arr);
-        node = new_node(&op, sizeof(op), ARG_TYPE_OP, node, val2);
+        node2 = get_MD(lex_arr);
+        if (!node2)
+            goto sntxerr;
+        node = new_node(&op, sizeof(op), ARG_TYPE_OP, node, node2);
         node = simplify(node);
         op = (long)lex_arr[p].val;
     }
     return node;
+sntxerr:
+    branch_delete(node);
+    branch_delete(node2);
+    return NULL;
 }
 
 static tree_node_t* get_MD (lexem* lex_arr)
 {
     tree_node_t* node = get_POW(lex_arr);
-    long op = (long)lex_arr[p].val;
+    tree_node_t* node2 = NULL;
+    long op = 0;
+    if (!node)
+        goto sntxerr;
+    op = (long)lex_arr[p].val;
     while((op == OP_CODE_MULT || op == OP_CODE_DIV)
             && lex_arr[p].type == ARG_TYPE_OP)
     {
         p++;
-        tree_node_t* val2 = get_POW(lex_arr);
-        node = new_node(&op, sizeof(op), ARG_TYPE_OP, node, val2);
+        node2 = get_POW(lex_arr);
+        if (!node2)
+            goto sntxerr;
+        node = new_node(&op, sizeof(op), ARG_TYPE_OP, node, node2);
         op = (long)lex_arr[p].val;
+        fprintf(stderr, "MD p = %d\n");
     }
     return node;
+sntxerr:
+    branch_delete(node);
+    branch_delete(node2);
+    return NULL;
 }
 
 static tree_node_t* get_POW (lexem* lex_arr)
 {
     tree_node_t* node = get_BR(lex_arr);
-    long op = (long)lex_arr[p].val;
-    while((op == OP_CODE_POW) && lex_arr[p].type == ARG_TYPE_OP)
+    tree_node_t* node2 = NULL;
+    long op = 0;
+
+    if (!node)
+        goto sntxerr;
+    op = (long)lex_arr[p].val;
+    while(op == OP_CODE_POW && lex_arr[p].type == ARG_TYPE_OP)
     {
         p++;
-        tree_node_t* val2 = get_BR(lex_arr);
-        node = new_node(&op, sizeof(op), ARG_TYPE_OP, node, val2);
+        node2 = get_BR(lex_arr);
+        if (!node2)
+            goto sntxerr;
+        node = new_node(&op, sizeof(op), ARG_TYPE_OP, node, node2);
         op = (long)lex_arr[p].val;
+        fprintf(stderr, "POW p = %d\n");
     }
     return node;
+sntxerr:
+    branch_delete(node);
+    branch_delete(node2);
+    return NULL;
 }
 
 static tree_node_t* get_BR (lexem* lex_arr)
 {
     long val = (long)lex_arr[p].val;
+    tree_node_t* node = NULL;
     if (val == OP_CODE_LBRACKET && lex_arr[p].type == ARG_TYPE_OP)
     {
         p++;
-        tree_node_t* node = get_PM(lex_arr);
+        node = get_PM(lex_arr);
+        if (!node)
+            goto sntxerr;
         val = (long)lex_arr[p].val;
         if (val != OP_CODE_RBRACKET)
-            syntax_error(lex_arr);
+            goto sntxerr;
         p++;
         return node;
     }
@@ -106,6 +143,9 @@ static tree_node_t* get_BR (lexem* lex_arr)
             return NULL;
         }
     }
+sntxerr:
+    branch_delete(node);
+    return NULL;
 }
 
 static tree_node_t* get_NUM (lexem* lex_arr)
@@ -130,5 +170,6 @@ static tree_node_t* get_FUNC(lexem* lex_arr)
 static void syntax_error (lexem* lex_arr)
 {
     fprintf(stderr, "SYNTAX ERROR IN P = %d\n", p);
+    free(lex_arr);
     exit(EXIT_FAILURE);
 }

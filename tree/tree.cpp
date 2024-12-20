@@ -111,6 +111,8 @@ tree_node_t* branch_copy(tree_node_t* node)
 
 void branch_delete(tree_node_t* node)
 {
+    if (node == NULL)
+        return;
     if (node->left)
         branch_delete(node->left);
     if (node->right)

@@ -23,6 +23,8 @@ int main(int argc, char* argv[])
     }
 
     lexarr lexem_array = init_lexem_array(filename);
+    if (lexem_array.ptr == NULL)
+        exit(EXIT_FAILURE);
     tree_node_t* root = get_grammar(lexem_array.ptr);
     free(lexem_array.ptr);
 

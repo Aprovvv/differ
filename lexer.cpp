@@ -39,7 +39,7 @@ lexarr init_lexem_array (const char* filename)
         int code = read_lex(fp, result.ptr + i);
         if (code == 1)
         {
-            fprintf(stderr, "error while reading lexem; p = %zu\n", i);
+            fprintf(stderr, "error while reading lexem, p = %zu\n", i);
             free(result.ptr);
             return lexarr {};
         }
@@ -67,7 +67,9 @@ static int read_lex (FILE* fp, lexem* lex)
         ungetc(ch, fp);
         lex->type = ARG_TYPE_NUM;
         lex->val = get_num(fp);
-        return 0;
+        if (lex->val == lex->val)
+            return 0;
+        return 1;
     }
 
     char arg[32] = {ch, '\0'};
@@ -110,7 +112,7 @@ static int read_lex (FILE* fp, lexem* lex)
 static double get_num(FILE* fp)
 {
     double val = 0;
-    FILE* fp_0 = fp;
+    int num_count = 1;
     int less_zero = 0, point = 0;
     int ch = getc(fp);
     int k = 1;
@@ -124,8 +126,8 @@ static double get_num(FILE* fp)
         if (ch == '.')
         {
             point = 1;
-            /*if (fp == fp_0)//FIXME пофиксить точку без числа
-                return NAN;*/
+            if (num_count == 0)
+                return NAN;
             ch = getc(fp);
             continue;
         }
@@ -133,6 +135,7 @@ static double get_num(FILE* fp)
             val = val*10 + ch - '0';
         else
             val += (double)(ch - '0') / pow(10, k++);
+        num_count++;
         ch = getc(fp);
     }
     ungetc(ch, fp);
