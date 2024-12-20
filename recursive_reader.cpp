@@ -35,8 +35,6 @@ static tree_node_t* get_PM (lexem* lex_arr)
     tree_node_t* node = get_MD(lex_arr);
     tree_node_t* node2 = NULL;
     long op = 0;
-    if (!node)
-        goto sntxerr;
     if (node == NULL)
     {
         long zero = 0;
