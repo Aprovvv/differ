@@ -49,8 +49,8 @@ lexarr init_lexem_array (const char* filename)
     result.size = i;
     fclose(fp);
 
-    /*for (int i = 0; i < result.size; i++)
-        fprintf(stderr, "type = %d; val = %f\n", result.ptr[i].type, result.ptr[i].val);*/
+    for (int i = 0; i < result.size; i++)
+        fprintf(stderr, "type = %d; val = %f\n", result.ptr[i].type, result.ptr[i].val);
 
     return result;
 }

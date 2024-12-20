@@ -8,19 +8,19 @@
 #include "tree_transforms.h"
 #include "latexing.h"
 
-static tree_node_t* diff_num(FILE* fp, tree_node_t* f);
-static tree_node_t* diff_var(FILE* fp, tree_node_t* f);
+static tree_node_t* diff_num     (FILE* fp, tree_node_t* f);
+static tree_node_t* diff_var     (FILE* fp, tree_node_t* f);
 static tree_node_t* diff_add_sub (FILE* fp, tree_node_t* f);
-static tree_node_t* diff_mult (FILE* fp, tree_node_t* f);
-static tree_node_t* diff_div (FILE* fp, tree_node_t* f);
-static tree_node_t* diff_pow (FILE* fp, tree_node_t* f);
-static tree_node_t* diff_sin (FILE* fp, tree_node_t* f);
-static tree_node_t* diff_cos (FILE* fp, tree_node_t* f);
-static tree_node_t* diff_tg (FILE* fp, tree_node_t* f);
-static tree_node_t* diff_ctg (FILE* fp, tree_node_t* f);
-static tree_node_t* diff_ln (FILE* fp, tree_node_t* f);
-static tree_node_t* diff_exp (FILE* fp, tree_node_t* f);
-static tree_node_t* diff_sqrt (FILE* fp, tree_node_t* f);
+static tree_node_t* diff_mult    (FILE* fp, tree_node_t* f);
+static tree_node_t* diff_div     (FILE* fp, tree_node_t* f);
+static tree_node_t* diff_pow     (FILE* fp, tree_node_t* f);
+static tree_node_t* diff_sin     (FILE* fp, tree_node_t* f);
+static tree_node_t* diff_cos     (FILE* fp, tree_node_t* f);
+static tree_node_t* diff_tg      (FILE* fp, tree_node_t* f);
+static tree_node_t* diff_ctg     (FILE* fp, tree_node_t* f);
+static tree_node_t* diff_ln      (FILE* fp, tree_node_t* f);
+static tree_node_t* diff_exp     (FILE* fp, tree_node_t* f);
+static tree_node_t* diff_sqrt    (FILE* fp, tree_node_t* f);
 
 extern const struct ARG VARS[] = {
     {"x", 'x', diff_var},
@@ -149,7 +149,14 @@ static tree_node_t* diff_add_sub (FILE* fp, tree_node_t* f)
         latex_tree(fp, f);
         fprintf(fp, ")' = (");
         latex_tree(fp, node_to_left(f));
-        fprintf(fp, ")' + (");
+        fprintf(fp, ")' ");
+        long val = 0;
+        node_get_val(f, &val);
+        if (val == OP_CODE_MULT)
+            fprintf(fp, "+");
+        else
+            fprintf(fp, "-");
+        fprintf(fp, " (");
         latex_tree(fp, node_to_right(f));
         fprintf(fp, ")'$\n\\end{center}\n\n");
     }
@@ -168,11 +175,11 @@ static tree_node_t* diff_mult (FILE* fp, tree_node_t* f)
         latex_tree(fp, f);
         fprintf(fp, ")' = (");
         latex_tree(fp, node_to_left(f));
-        fprintf(fp, ")'*(");
+        fprintf(fp, ")' \\cdot (");
         latex_tree(fp, node_to_right(f));
         fprintf(fp, ") + (");
         latex_tree(fp, node_to_right(f));
-        fprintf(fp, ")'*(");
+        fprintf(fp, ")' \\cdot (");
         latex_tree(fp, node_to_left(f));
         fprintf(fp, ")'$\n\\end{center}\n\n");
     }
@@ -198,11 +205,11 @@ static tree_node_t* diff_div (FILE* fp, tree_node_t* f)
         latex_tree(fp, f);
         fprintf(fp, ")' = \\frac{(");
         latex_tree(fp, node_to_left(f));
-        fprintf(fp, ")'*(");
+        fprintf(fp, ")' \\cdot (");
         latex_tree(fp, node_to_right(f));
         fprintf(fp, ") + (");
         latex_tree(fp, node_to_right(f));
-        fprintf(fp, ")'*(");
+        fprintf(fp, ")' \\cdot (");
         latex_tree(fp, node_to_left(f));
         fprintf(fp, ")}{(");
         latex_tree(fp, node_to_right(f));
@@ -249,7 +256,7 @@ static tree_node_t* diff_pow (FILE* fp, tree_node_t* f)
             latex_tree(fp, node_to_left(f));
             fprintf(fp, ")^");
             smart_double_print(fp, new_pow);
-            fprintf(fp, "*(");
+            fprintf(fp, " \\cdot (");
             latex_tree(fp, node_to_left(f));
             fprintf(fp, ")'$\n\\end{center}\n\n");
         }
@@ -281,13 +288,13 @@ static tree_node_t* diff_pow (FILE* fp, tree_node_t* f)
         latex_tree(fp, node_to_right(f));
         fprintf(fp, "}{");
         latex_tree(fp, node_to_left(f));
-        fprintf(fp, "}*(");
+        fprintf(fp, "} \\cdot (");
         latex_tree(fp, node_to_left(f));
         fprintf(fp, ")'+\\ln{(");
         latex_tree(fp, node_to_left(f));
-        fprintf(fp, ")}*(");
+        fprintf(fp, ")} \\cdot (");
         latex_tree(fp, node_to_right(f));
-        fprintf(fp, ")')*(");
+        fprintf(fp, ")') \\cdot (");
         latex_tree(fp, f);
         fprintf(fp, ")'$\n\\end{center}\n\n");
     }
@@ -323,7 +330,7 @@ static tree_node_t* diff_sin (FILE* fp, tree_node_t* f)
         latex_tree(fp, f);
         fprintf(fp, ")' = \\cos{(");
         latex_tree(fp, node_to_right(f));
-        fprintf(fp, ")}*(");
+        fprintf(fp, ")} \\cdot (");
         latex_tree(fp, node_to_right(f));
         fprintf(fp, ")'$\n\\end{center}\n\n");
     }
@@ -347,7 +354,7 @@ static tree_node_t* diff_cos (FILE* fp, tree_node_t* f)
         latex_tree(fp, f);
         fprintf(fp, ")' = -\\sin{(");
         latex_tree(fp, node_to_right(f));
-        fprintf(fp, ")}*(");
+        fprintf(fp, ")} \\cdot (");
         latex_tree(fp, node_to_right(f));
         fprintf(fp, ")'$\n\\end{center}\n\n");
     }
@@ -375,7 +382,7 @@ static tree_node_t* diff_tg (FILE* fp, tree_node_t* f)
         latex_tree(fp, f);
         fprintf(fp, ")' = \\frac{1}{\\cos^2{(");
         latex_tree(fp, node_to_right(f));
-        fprintf(fp, ")}}*(");
+        fprintf(fp, ")}} \\ cdot (");
         latex_tree(fp, node_to_right(f));
         fprintf(fp, ")'$\n\\end{center}\n\n");
     }
@@ -403,7 +410,7 @@ static tree_node_t* diff_ctg (FILE* fp, tree_node_t* f)
         latex_tree(fp, f);
         fprintf(fp, ")' = -\\frac{1}{\\sin^2{(");
         latex_tree(fp, node_to_right(f));
-        fprintf(fp, ")}}*(");
+        fprintf(fp, ")}} \\cdot (");
         latex_tree(fp, node_to_right(f));
         fprintf(fp, ")'$\n\\end{center}\n\n");
     }
@@ -452,7 +459,7 @@ static tree_node_t* diff_exp (FILE* fp, tree_node_t* f)
         latex_tree(fp, f);
         fprintf(fp, ")' = (");
         latex_tree(fp, node_to_right(f));
-        fprintf(fp, ")'*");
+        fprintf(fp, ")' \\cdot ");
         latex_tree(fp, f);
         fprintf(fp, "$\n\\end{center}\n\n");
     }
@@ -472,7 +479,7 @@ static tree_node_t* diff_sqrt (FILE* fp, tree_node_t* f)
         latex_tree(fp, f);
         fprintf(fp, ")' = \\frac{(");
         latex_tree(fp, node_to_right(f));
-        fprintf(fp, ")'}{2*");
+        fprintf(fp, ")'}{2 \\cdot ");
         latex_tree(fp, f);
         fprintf(fp, "}$\n\\end{center}\n\n");
     }

@@ -49,7 +49,7 @@ size_t node_get_size(tree_node_t* node)
 }
 
 
-void node_set_size(tree_node_t* node, int size)
+void node_set_size(tree_node_t* node, size_t size)
 {
     node->val_size = size;
 }

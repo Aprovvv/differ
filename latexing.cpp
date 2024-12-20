@@ -11,7 +11,7 @@ static int latex_num (FILE* fp, tree_node_t* node);
 static int latex_var (FILE* fp, tree_node_t* node);
 static int latex_func (FILE* fp, tree_node_t* node);
 static int latex_op (FILE* fp, tree_node_t* node);
-
+static int dblcmp (double a, double b);
 
 int pr (FILE* fp, const void* ptr, int type);
 
@@ -115,15 +115,22 @@ static int latex_op (FILE* fp, tree_node_t* node)
     switch (val)
     {
     case OP_CODE_ADD:
+    {
         latex_tree(fp, node_to_left(node));
         fprintf(fp, "+");
         latex_tree(fp, node_to_right(node));
         return 0;
+    }
     case OP_CODE_SUB:
-        latex_tree(fp, node_to_left(node));
+    {
+        double val = 0;
+        node_get_val(node_to_left(node), &val);
+        if (LEFT_IS_NUM(node) && dblcmp(val, 0) != 0)
+            latex_tree(fp, node_to_left(node));
         fprintf(fp, "-");
         latex_tree(fp, node_to_right(node));
         return 0;
+    }
     case OP_CODE_MULT:
         if (LEFT_IS_OP(node))
         {
@@ -146,7 +153,7 @@ static int latex_op (FILE* fp, tree_node_t* node)
         }
 
         if (!RIGHT_IS_VAR(node) || !LEFT_IS_NUM(node))
-            fprintf(fp, "\\cdot");
+            fprintf(fp, " \\cdot ");
 
         if (RIGHT_IS_OP(node))
         {
@@ -215,4 +222,13 @@ void smart_double_print(FILE* fp, double x)
         fprintf(fp, ".%*d", sign_count,
                 (int)(frac_part*pow(10, sign_count)));
     }
+}
+
+static int dblcmp (double a, double b)
+{
+    if (a - b > EPS)
+        return 1;
+    if (b - a > EPS)
+        return -1;
+    return 0;
 }
