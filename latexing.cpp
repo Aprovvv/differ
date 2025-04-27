@@ -211,7 +211,10 @@ void smart_double_print(FILE* fp, double x)
     double frac_part = abs(modf(x, &i_part));
     int int_part = (int)i_part;
 
-    fprintf(fp, "%d", int_part);
+    if (dblcmp (x, 0) < 0 && i_part >= 0)
+        fprintf(fp, "-%d", int_part);
+    else
+        fprintf(fp, "%d", int_part);
 
     if ((int)(frac_part*10e6) > 0)
     {

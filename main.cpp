@@ -18,7 +18,9 @@ int main(int argc, char* argv[])
     const char* filename = get_filename(argc, argv);
     if (filename == NULL)
     {
-        fprintf(stderr, "UNDEFINED NAME OF FILE\n");
+        fprintf(stderr, "Undefined name of file. Please "
+                "start the program using following format:\n"
+                "./diff -<name_of_file>\n");
         exit(EXIT_FAILURE);
     }
 

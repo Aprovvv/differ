@@ -73,6 +73,7 @@ tree_node_t* diff_and_tex (tree_node_t* root)
     fprintf(texfile, "$\n\\end{center}\n\n");
     fprintf(texfile, "Ну и если чуть-чуть упростить:\n\\begin{center}\n");
     fprintf(texfile, "$f'(x) = ");
+
     droot = simplify(droot);
     latex_tree(texfile, droot);
     fprintf(texfile, "$\n\\end{center}\n\n");
@@ -264,9 +265,9 @@ static tree_node_t* diff_pow (FILE* fp, tree_node_t* f)
             smart_double_print(fp, old_pow);
             fprintf(fp, "(");
             latex_tree(fp, node_to_left(f));
-            fprintf(fp, ")^");
+            fprintf(fp, ")^{");
             smart_double_print(fp, new_pow);
-            fprintf(fp, " \\cdot (");
+            fprintf(fp, "} \\cdot (");
             latex_tree(fp, node_to_left(f));
             fprintf(fp, ")'$\n\\end{center}\n\n");
         }
